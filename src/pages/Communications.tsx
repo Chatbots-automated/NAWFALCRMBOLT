@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, MessageSquare, Phone, Send, Plus, Search, Filter, Video, Users, CheckCircle, MessageCircle, X } from 'lucide-react';
+import { Mail, MessageSquare, Phone, Send, Plus, Search, Filter, Video, Users, CheckCircle, MessageCircle, X, Eye, Download } from 'lucide-react';
 import { clientService } from '../services/clientService';
 import { Client } from '../lib/supabase';
 import CallTextActions from '../components/CallTextActions';
@@ -313,11 +313,11 @@ const Communications: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'lead': return 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/40'
-      case 'inactive': return 'bg-gray-500/20 text-gray-400 border-gray-500/40'
-      case 'lost': return 'bg-red-500/20 text-red-400 border-red-500/40'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/40'
+      case 'lead': return 'bg-blue-500/20 text-blue-400 border-blue-500/40';
+      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/40';
+      case 'inactive': return 'bg-gray-500/20 text-gray-400 border-gray-500/40';
+      case 'lost': return 'bg-red-500/20 text-red-400 border-red-500/40';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/40';
     }
   };
 
@@ -570,344 +570,46 @@ const Communications: React.FC = () => {
                               </div>
                               
                               {/* Status Badge */}
-              
-              {/* Action Bar */}
-              {selectedClients.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-red-500/30 p-6 z-50">
-                  <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="text-white font-bold">{selectedClients.length} ELITE TARGETS SELECTED</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setShowPreview(true)}
-                        className="flex items-center gap-2 px-6 py-3 border border-purple-500/30 rounded-xl hover:bg-purple-500/10 transition-colors text-purple-300 hover:text-purple-200 font-semibold"
-                      >
-                        <Eye size={16} />
-                        PREVIEW MISSION
-                      </button>
-                      <button
-                        onClick={handleSendEmails}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            DEPLOYING...
-                          </>
-                        ) : (
-                          <>
-                            <Send size={16} />
-                            DEPLOY ELITE EMAILS
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Email Preview Modal */}
-      {showEmailPreview && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-black/90 backdrop-blur-xl border border-red-500/30 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h2 className="text-2xl font-bold text-white">EMAIL PREVIEW</h2>
-              <button
-                onClick={() => setShowEmailPreview(false)}
-                className="p-2 rounded-xl hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
-                <iframe
-                  srcDoc={generateEmailHtml()}
-                  className="w-full h-[600px] border-0"
-                  title="Email Preview"
-                />
-              </div>
-              
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => {
-                    const blob = new Blob([generateEmailHtml()], { type: 'text/html' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'email-template.html';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="px-6 py-3 border border-green-500/30 rounded-xl hover:bg-green-500/10 transition-colors text-green-300 hover:text-green-200 font-medium"
-                >
-                  <Download size={16} className="inline mr-2" />
-                  DOWNLOAD HTML
-                </button>
-                <button
-                  onClick={() => setShowEmailPreview(false)}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
-                >
-                  CLOSE PREVIEW
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* All Clients List */}
-      <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-sm border border-red-500/20 overflow-hidden">
-        <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-semibold text-white">ALL ELITE CLIENTS</h2>
-          <p className="text-gray-400 text-sm mt-1">Your complete elite network</p>
-        </div>
-        <div className="p-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
-              <span className="ml-3 text-white font-medium">Loading elite clients...</span>
-            </div>
-          ) : clients.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="mx-auto h-16 w-16 text-gray-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">No Elite Clients Found</h3>
-              <p className="text-gray-400 mb-6">Start building your elite network by adding your first client</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {clients.map((client) => (
-                <div key={client.id} className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-red-500/30 to-purple-500/30 rounded-full flex items-center justify-center border border-red-500/40">
-                      <span className="text-sm font-bold text-white">
-                        {client.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-white text-sm">{client.full_name}</h4>
-                      {client.company && <p className="text-xs text-gray-400">{client.company}</p>}
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border mt-1 ${getStatusColor(client.status)}`}>
-                        {client.status.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {client.email && (
-                      <div className="flex items-center gap-2 text-xs text-gray-300">
-                        <Mail size={12} className="text-blue-400" />
-                        <span className="truncate">{client.email}</span>
-                      </div>
-                    )}
-                    {client.phone && (
-                      <div className="flex items-center gap-2 text-xs text-gray-300">
-                        <Phone size={12} className="text-green-400" />
-                        <span>{client.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-4 pt-3 border-t border-white/10">
-                    <CallTextActions
-                      phoneE164={client.phone}
-                      email={undefined}
-                      clientName={client.full_name}
-                      clientId={client.id}
-                      onActionLog={handleActionLog}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-    </div>
-  );
-};
-
-export default Communications;
-                    <button
-                      onClick={() => setShowEmailDropdown(false)}
-                      className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search clients..."
-                      value={emailSearchQuery}
-                      onChange={(e) => setEmailSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-black/30 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 text-white placeholder-gray-400"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">
-                      {emailSelectedClients.length} of {filteredEmailClients.length} selected
-                    </span>
-                    <button
-                      onClick={handleEmailSelectAll}
-                      className="text-sm text-red-400 hover:text-red-300 font-medium"
-                    >
-                      {emailSelectedClients.length === filteredEmailClients.length ? 'Deselect All' : 'Select All'}
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Email Compose Form */}
-                <div className="p-6 border-b border-white/10 space-y-4">
-                  <h3 className="text-lg font-bold text-white mb-4">EMAIL TEMPLATE VARIABLES</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Subject Line</label>
-                      <input
-                        type="text"
-                        value={templateVars.SUBJECT_LINE}
-                        onChange={(e) => setTemplateVars(prev => ({ ...prev, SUBJECT_LINE: e.target.value }))}
-                        className="w-full px-4 py-2 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white text-sm"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Email Body (HTML)</label>
-                      <textarea
-                        rows={8}
-                        value={templateVars.EMAIL_BODY}
-                        onChange={(e) => setTemplateVars(prev => ({ ...prev, EMAIL_BODY: e.target.value }))}
-                        placeholder="Hi {name}, I wanted to reach out about your elite transformation journey.&#10;&#10;Are you ready to take your leadership to the next level?&#10;&#10;Let's discuss how I can help you achieve extraordinary results."
-                        className="w-full px-4 py-3 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none bg-black/30 text-white placeholder-gray-500 text-sm leading-relaxed"
-                      />
-                      <p className="text-xs text-gray-400 mt-1">Write in plain text. Use {name} for personalization. Double line breaks create new paragraphs.</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Call to Action</label>
-                        <input
-                          type="text"
-                          value={templateVars.CALL_TO_ACTION}
-                          onChange={(e) => setTemplateVars(prev => ({ ...prev, CALL_TO_ACTION: e.target.value }))}
-                         className="w-full px-4 py-2 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white text-sm"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Button URL</label>
-                        <input
-                          type="url"
-                          value={templateVars.URL}
-                          onChange={(e) => setTemplateVars(prev => ({ ...prev, URL: e.target.value }))}
-                          className="w-full px-4 py-2 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white text-sm"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Footer Links</label>
-                      <input
-                        type="text"
-                        value={templateVars.FOOTER_LINKS}
-                        onChange={(e) => setTemplateVars(prev => ({ ...prev, FOOTER_LINKS: e.target.value }))}
-                        className="w-full px-4 py-2 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white text-sm"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Manage Preferences URL</label>
-                        <input
-                          type="url"
-                          value={templateVars.MANAGE_PREFERENCES_URL}
-                          onChange={(e) => setTemplateVars(prev => ({ ...prev, MANAGE_PREFERENCES_URL: e.target.value }))}
-                          className="w-full px-4 py-2 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white text-sm"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Unsubscribe URL</label>
-                        <input
-                          type="url"
-                          value={templateVars.UNSUBSCRIBE_URL}
-                          onChange={(e) => setTemplateVars(prev => ({ ...prev, UNSUBSCRIBE_URL: e.target.value }))}
-                          className="w-full px-4 py-2 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="max-h-80 overflow-y-auto">
-                  {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
-                      <span className="ml-3 text-white font-medium">Loading clients...</span>
-                    </div>
-                  ) : filteredEmailClients.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400">No clients found</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-white/10">
-                      {filteredEmailClients.map((client) => (
-                        <div key={client.id} className="p-3 hover:bg-white/5 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={emailSelectedClients.includes(client.id)}
-                              onChange={() => handleEmailClientSelect(client.id)}
-                              className="rounded border-red-500/30 bg-black/30 text-red-500 focus:ring-red-500"
-                            />
-                            <div className="w-8 h-8 bg-gradient-to-br from-red-500/30 to-purple-500/30 rounded-full flex items-center justify-center border border-red-500/40">
-                              <span className="text-xs font-bold text-white">
-                                {client.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-white text-sm">{client.full_name}</h4>
-                              <div className="flex items-center gap-2 text-xs text-gray-400">
-                                {client.email && <span>{client.email}</span>}
-                                {client.company && <span>• {client.company}</span>}
+                              <div className="mt-3">
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(client.status)}`}>
+                                  {client.status.toUpperCase()}
+                                </span>
                               </div>
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border mt-1 ${getStatusColor(client.status)}`}>
-                                {client.status.toUpperCase()}
-                              </span>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Action Bar */}
+                  {emailSelectedClients.length > 0 && (
+                    <div className="p-6 border-t border-white/10 bg-gradient-to-r from-red-500/10 to-purple-500/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <p className="text-lg font-bold text-red-400">{emailSelectedClients.length}</p>
+                            <p className="text-xs text-gray-400 font-medium">Targets Selected</p>
+                          </div>
+                          <button
+                            onClick={() => setShowEmailPreview(true)}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/40 rounded-xl hover:bg-blue-500/30 transition-all duration-200 text-blue-300 hover:text-blue-200 font-semibold"
+                          >
+                            <Eye size={16} />
+                            PREVIEW EMAIL
+                          </button>
+                        </div>
+                        <button
+                          onClick={handleMassEmail}
+                          className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-bold text-lg"
+                        >
+                          <Send size={20} />
+                          DEPLOY TO {emailSelectedClients.length} TARGETS
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-                
-                {emailSelectedClients.length > 0 && (
-                  <div className="p-6 border-t border-white/10">
-                    <button
-                      onClick={handleMassEmail}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold text-lg"
-                    >
-                      <Mail size={16} />
-                      SEND TO {emailSelectedClients.length} CLIENTS
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>
