@@ -156,8 +156,7 @@ const Calendar: React.FC = () => {
                     <span className="text-red-400 text-2xl font-bold">!</span>
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">OPERATION FAILED</h3>
-                  <p className="text-red-400 mb-6 font-medium">Calendar service temporarily unavailable</p>
-                  <p className="text-gray-400 text-sm mb-6">Using demo mode for now</p>
+                  <p className="text-red-400 mb-6 font-medium">{error}</p>
                   <button 
                     onClick={() => window.location.reload()}
                     className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
