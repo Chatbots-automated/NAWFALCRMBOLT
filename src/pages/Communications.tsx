@@ -358,7 +358,7 @@ const Communications: React.FC = () => {
             
             {showEmailDropdown && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-black/95 backdrop-blur-xl border border-red-500/30 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+                <div className="bg-black/95 backdrop-blur-xl border border-red-500/30 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                   {/* Header */}
                   <div className="p-6 border-b border-white/10 bg-gradient-to-r from-red-500/10 to-purple-500/10">
                     <div className="flex items-center justify-between mb-4">
@@ -501,7 +501,7 @@ const Communications: React.FC = () => {
                   </div>
                   
                   {/* Client Selection Grid */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="overflow-y-auto max-h-[50vh]">
                     {loading ? (
                       <div className="flex items-center justify-center py-16">
                         <div className="relative">
@@ -590,8 +590,8 @@ const Communications: React.FC = () => {
               
                   {/* Action Bar */}
                   {emailSelectedClients.length > 0 && (
-                    <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-red-500/30 p-6 z-50">
-                      <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="sticky bottom-0 bg-black/90 backdrop-blur-xl border-t border-red-500/30 p-6">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
