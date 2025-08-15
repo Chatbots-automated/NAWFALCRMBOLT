@@ -155,14 +155,14 @@ const Calendar: React.FC = () => {
                   <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/40">
                     <span className="text-red-400 text-2xl font-bold">!</span>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">CALENDAR API ERROR</h3>
-                  <p className="text-red-400 mb-6 font-medium">{error}</p>
-                  <p className="text-gray-400 text-sm mb-6">Check your calendar API connection</p>
+                  <h3 className="text-xl font-bold text-white mb-2">DEMO MODE ACTIVE</h3>
+                  <p className="text-yellow-400 mb-6 font-medium">Calendar API unavailable - showing demo data</p>
+                  <p className="text-gray-400 text-sm mb-6">Connect your calendar API for live data</p>
                   <button 
                     onClick={() => window.location.reload()}
                     className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
                   >
-                    RETRY CONNECTION
+                    REFRESH DATA
                   </button>
                 </div>
               ) : (
