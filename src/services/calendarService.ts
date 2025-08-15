@@ -29,7 +29,9 @@ export interface CalendarResponse {
 }
 
 class CalendarService {
-  private readonly baseUrl = '/api/calendar.js';
+  private readonly baseUrl = import.meta.env.PROD 
+    ? 'https://nawfalfilalicrm.vercel.app/api/calendar.js'
+    : '/api/calendar.js';
 
   async getEvents(options: {
     start?: string;
