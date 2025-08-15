@@ -630,69 +630,91 @@ const Clients: React.FC = () => {
                 </div>
               )}
 
-              {selectedClient.notes.length > 0 && (
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <h4 className="text-gray-300 font-medium mb-3">Activity & Notes</h4>
-                  <div className="space-y-3 max-h-40 overflow-y-auto">
-                    {selectedClient.notes.map((note, index) => (
-                      <div key={index} className={`border-l-2 pl-3 ${
-                        note.type === 'activity' ? 'border-blue-500/40' : 'border-red-500/40'
-                      }`}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`w-2 h-2 rounded-full ${
-                            note.type === 'activity' ? 'bg-blue-400' : 'bg-red-400'
-                          }`}></span>
-                          <p className="text-white text-sm font-medium">{note.body}</p>
-                        </div>
-                        {note.changes && note.changes.length > 0 && (
-                          <div className="ml-4 space-y-1">
-                            {note.changes.map((change, changeIndex) => (
-                              <div key={changeIndex} className="text-xs text-gray-300">
-                                <span className="font-medium">{change.field}:</span> 
-                                <span className="text-gray-400"> {change.old_value}</span> 
-                                <span className="text-gray-500"> → </span>
-                                <span className="text-white">{change.new_value}</span>
-                              </div>
-                            ))}
+              {/* Notes Section */}
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <h4 className="text-gray-300 font-medium mb-3">Notes</h4>
+                <div className="space-y-3 max-h-40 overflow-y-auto mb-4">
+                  {selectedClient.notes.filter(note => note.type === 'manual').length > 0 ? (
+                    selectedClient.notes
+                      .filter(note => note.type === 'manual')
+                      .map((note, index) => (
+                        <div key={index} className="border-l-2 border-red-500/40 pl-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                            <p className="text-white text-sm font-medium">{note.body}</p>
                           </div>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1 ml-4">
-                          {note.author} • {formatDate(note.created_at)}
-                        </p>
-                      </div>
-                    ))}
+                          <p className="text-xs text-gray-400 mt-1 ml-4">
+                            {note.author} • {formatDate(note.created_at)}
+                          </p>
+                        </div>
+                      ))
+                  ) : (
+                    <p className="text-gray-400 text-sm">No notes added yet</p>
+                  )}
+                </div>
+                
+                {/* Add Note Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add a note for this client..."
+                    value={noteInputs[selectedClient.id] || ''}
+                    onChange={(e) => setNoteInputs(prev => ({ ...prev, [selectedClient.id]: e.target.value }))}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && noteInputs[selectedClient.id]?.trim()) {
+                        handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
+                      }
+                    }}
+                    className="flex-1 px-4 py-3 border border-purple-500/30 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-black/30 text-white placeholder-gray-500"
+                  />
+                  <button
+                    onClick={() => {
+                      if (noteInputs[selectedClient.id]?.trim()) {
+                        handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
+                      }
+                    }}
+                    disabled={!noteInputs[selectedClient.id]?.trim()}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ADD NOTE
+                  </button>
+                </div>
+              </div>
+
+              {/* Activity Section */}
+              {selectedClient.notes.filter(note => note.type === 'activity').length > 0 && (
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <h4 className="text-gray-300 font-medium mb-3">Activity</h4>
+                  <div className="space-y-3 max-h-40 overflow-y-auto">
+                    {selectedClient.notes
+                      .filter(note => note.type === 'activity')
+                      .map((note, index) => (
+                        <div key={index} className="border-l-2 border-blue-500/40 pl-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                            <p className="text-white text-sm font-medium">{note.body}</p>
+                          </div>
+                          {note.changes && note.changes.length > 0 && (
+                            <div className="ml-4 space-y-1">
+                              {note.changes.map((change, changeIndex) => (
+                                <div key={changeIndex} className="text-xs text-gray-300">
+                                  <span className="font-medium">{change.field}:</span> 
+                                  <span className="text-gray-400"> {change.old_value}</span> 
+                                  <span className="text-gray-500"> → </span>
+                                  <span className="text-white">{change.new_value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1 ml-4">
+                            {note.author} • {formatDate(note.created_at)}
+                          </p>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
-
               <div className="flex gap-3 pt-4 border-t border-white/10">
-                <div className="flex-1">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add a note for this client..."
-                      value={noteInputs[selectedClient.id] || ''}
-                      onChange={(e) => setNoteInputs(prev => ({ ...prev, [selectedClient.id]: e.target.value }))}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && noteInputs[selectedClient.id]?.trim()) {
-                          handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
-                        }
-                      }}
-                      className="flex-1 px-4 py-3 border border-purple-500/30 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-black/30 text-white placeholder-gray-500"
-                    />
-                    <button
-                      onClick={() => {
-                        if (noteInputs[selectedClient.id]?.trim()) {
-                          handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
-                        }
-                      }}
-                      disabled={!noteInputs[selectedClient.id]?.trim()}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ADD NOTE
-                    </button>
-                  </div>
-                </div>
                 <div onClick={(e) => e.stopPropagation()}>
                   <CallTextActions
                     phoneE164={selectedClient.phone}
