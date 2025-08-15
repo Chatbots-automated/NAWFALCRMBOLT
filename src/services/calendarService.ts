@@ -28,82 +28,6 @@ export interface CalendarResponse {
   value: CalendarEvent[];
 }
 
-// Mock calendar events for production demo
-const mockEvents: CalendarEvent[] = [
-  {
-    id: '1',
-    subject: 'Elite Strategy Session - John Smith',
-    start: {
-      dateTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
-      timeZone: 'Eastern Standard Time'
-    },
-    end: {
-      dateTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
-      timeZone: 'Eastern Standard Time'
-    },
-    organizer: {
-      emailAddress: {
-        name: 'Nawfal Filali',
-        address: 'nawfal@filaliempire.com'
-      }
-    },
-    location: {
-      displayName: 'Elite Command Center'
-    },
-    bodyPreview: 'Strategic coaching session focused on elite performance and leadership transformation.',
-    webLink: 'https://outlook.office365.com/calendar',
-    isAllDay: false
-  },
-  {
-    id: '2',
-    subject: 'Elite Transformation Call - Sarah Wilson',
-    start: {
-      dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
-      timeZone: 'Eastern Standard Time'
-    },
-    end: {
-      dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), // Tomorrow + 1 hour
-      timeZone: 'Eastern Standard Time'
-    },
-    organizer: {
-      emailAddress: {
-        name: 'Nawfal Filali',
-        address: 'nawfal@filaliempire.com'
-      }
-    },
-    location: {
-      displayName: 'Cal.com Video Call'
-    },
-    bodyPreview: 'Elite transformation coaching session for high-performance leadership development.',
-    webLink: 'https://outlook.office365.com/calendar',
-    isAllDay: false
-  },
-  {
-    id: '3',
-    subject: 'Elite Mastermind Group Session',
-    start: {
-      dateTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // Day after tomorrow
-      timeZone: 'Eastern Standard Time'
-    },
-    end: {
-      dateTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(), // Day after tomorrow + 2 hours
-      timeZone: 'Eastern Standard Time'
-    },
-    organizer: {
-      emailAddress: {
-        name: 'Nawfal Filali',
-        address: 'nawfal@filaliempire.com'
-      }
-    },
-    location: {
-      displayName: 'Elite Mastermind HQ'
-    },
-    bodyPreview: 'Exclusive mastermind session for elite entrepreneurs and leaders.',
-    webLink: 'https://outlook.office365.com/calendar',
-    isAllDay: false
-  }
-];
-
 class CalendarService {
   private readonly baseUrl = import.meta.env.PROD 
     ? 'https://nawfalfilalicrm.vercel.app/api/calendar.js'
@@ -117,12 +41,6 @@ class CalendarService {
     top?: number;
   } = {}): Promise<CalendarEvent[]> {
     try {
-      // In production, if the API is not available, return mock data
-      if (import.meta.env.PROD) {
-        console.log('Production mode: Using mock calendar data for demo');
-        return mockEvents;
-      }
-
       const params = new URLSearchParams();
       
       if (options.start) params.set('start', options.start);
@@ -136,29 +54,29 @@ class CalendarService {
       const response = await fetch(url);
       
       if (!response.ok) {
-        // If API is not available in development, return mock data
-        console.warn(`Calendar API not available: ${response.status} ${response.statusText}. Using mock data.`);
-        return mockEvents;
+        // If API is not available, return empty array instead of throwing
+        console.warn(`Calendar API not available: ${response.status} ${response.statusText}`);
+        return [];
       }
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        // If response is not JSON (like HTML error page), return mock data
-        console.warn('Calendar API returned non-JSON response. Using mock data.');
-        return mockEvents;
+        // If response is not JSON (like HTML error page), return empty array
+        console.warn('Calendar API returned non-JSON response');
+        return [];
       }
 
       try {
         const data: CalendarResponse = await response.json();
         return data.value || [];
       } catch (parseError) {
-        console.warn('Failed to parse calendar API response:', parseError, 'Using mock data.');
-        return mockEvents;
+        console.warn('Failed to parse calendar API response:', parseError);
+        return [];
       }
     } catch (error) {
-      console.warn('Calendar service unavailable:', error, 'Using mock data.');
-      // Return mock data instead of empty array to show demo functionality
-      return mockEvents;
+      console.warn('Calendar service unavailable:', error);
+      // Return empty array instead of throwing to prevent app crashes
+      return [];
     }
   }
 
