@@ -29,7 +29,9 @@ export interface CalendarResponse {
 }
 
 class CalendarService {
-  private readonly baseUrl = '/api/calendar.js';
+  private readonly baseUrl = import.meta.env.PROD 
+    ? 'https://nawfalfilalicrm.vercel.app/api/calendar.js'
+    : '/api/calendar.js';
 
   async getEvents(options: {
     start?: string;
@@ -52,14 +54,29 @@ class CalendarService {
       const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Calendar API error: ${response.status} ${response.statusText}`);
+        // If API is not available, return empty array instead of throwing
+        console.warn(`Calendar API not available: ${response.status} ${response.statusText}`);
+        return [];
       }
 
-      const data: CalendarResponse = await response.json();
-      return data.value || [];
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If response is not JSON (like HTML error page), return empty array
+        console.warn('Calendar API returned non-JSON response');
+        return [];
+      }
+
+      try {
+        const data: CalendarResponse = await response.json();
+        return data.value || [];
+      } catch (parseError) {
+        console.warn('Failed to parse calendar API response:', parseError);
+        return [];
+      }
     } catch (error) {
-      console.error('Failed to fetch calendar events:', error);
-      throw error;
+      console.warn('Calendar service unavailable:', error);
+      // Return empty array instead of throwing to prevent app crashes
+      return [];
     }
   }
 
