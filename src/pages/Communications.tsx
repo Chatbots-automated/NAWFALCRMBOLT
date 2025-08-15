@@ -570,48 +570,48 @@ const Communications: React.FC = () => {
                               </div>
                               
                               {/* Status Badge */}
-                              <div className="mt-3">
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(client.status)}`}>
-                                  {client.status.toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+              
+              {/* Action Bar */}
+              {selectedClients.length > 0 && (
+                <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-red-500/30 p-6 z-50">
+                  <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        <span className="text-white font-bold">{selectedClients.length} ELITE TARGETS SELECTED</span>
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* Action Bar */}
-                  {emailSelectedClients.length > 0 && (
-                    <div className="p-6 border-t border-white/10 bg-gradient-to-r from-red-500/10 to-purple-500/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="text-center">
-                            <p className="text-lg font-bold text-red-400">{emailSelectedClients.length}</p>
-                            <p className="text-xs text-gray-400 font-medium">Targets Selected</p>
-                          </div>
-                          <button
-                            onClick={() => setShowEmailPreview(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/40 rounded-xl hover:bg-blue-500/30 transition-all duration-200 text-blue-300 hover:text-blue-200 font-semibold"
-                          >
-                            <Eye size={16} />
-                            PREVIEW EMAIL
-                          </button>
-                        </div>
-                        <button
-                          onClick={handleMassEmail}
-                          className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-bold text-lg"
-                        >
-                          <Send size={20} />
-                          DEPLOY TO {emailSelectedClients.length} TARGETS
-                        </button>
-                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowPreview(true)}
+                        className="flex items-center gap-2 px-6 py-3 border border-purple-500/30 rounded-xl hover:bg-purple-500/10 transition-colors text-purple-300 hover:text-purple-200 font-semibold"
+                      >
+                        <Eye size={16} />
+                        PREVIEW MISSION
+                      </button>
+                      <button
+                        onClick={handleSendEmails}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            DEPLOYING...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={16} />
+                            DEPLOY ELITE EMAILS
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
