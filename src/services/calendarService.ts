@@ -50,18 +50,11 @@ class CalendarService {
       const url = `${this.baseUrl}?${params.toString()}`;
       
       const response = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'cors',
-        body: JSON.stringify({
-          start: options.start,
-          end: options.end,
-          calendarId: options.calendarId,
-          tz: options.tz,
-          top: options.top
-        })
+        mode: 'cors'
       });
       
       if (!response.ok) {
