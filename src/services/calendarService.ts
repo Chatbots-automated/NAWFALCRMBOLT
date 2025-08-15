@@ -29,7 +29,7 @@ export interface CalendarResponse {
 }
 
 class CalendarService {
-  private readonly baseUrl = '/api/calendar.js';
+  private readonly baseUrl = 'https://nawfalfilalicrm.vercel.app/api/calendar.js';
 
   async getEvents(options: {
     start?: string;
