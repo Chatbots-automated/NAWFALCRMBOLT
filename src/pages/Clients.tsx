@@ -17,7 +17,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  MessageSquare,
   Send
 } from 'lucide-react'
 import { clientService } from '../services/clientService'
@@ -38,6 +37,7 @@ const Clients: React.FC = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [showMassEmailModal, setShowMassEmailModal] = useState(false)
+  const [noteInputs, setNoteInputs] = useState<{[key: string]: string}>({})
   const [stats, setStats] = useState({
     total: 0,
     leads: 0,
@@ -101,6 +101,8 @@ const Clients: React.FC = () => {
   }
 
   const handleAddNote = async (clientId: string, note: string) => {
+    if (!note.trim()) return
+    
     try {
       await clientService.addNote(clientId, note, 'Admin')
       fetchClients()
@@ -109,6 +111,8 @@ const Clients: React.FC = () => {
         const updatedClient = await clientService.getClient(clientId)
         setSelectedClient(updatedClient)
       }
+      // Clear the note input for this client
+      setNoteInputs(prev => ({ ...prev, [clientId]: '' }))
     } catch (err) {
       console.error('Failed to add note:', err)
       alert('Failed to add note')
@@ -662,18 +666,33 @@ const Clients: React.FC = () => {
               )}
 
               <div className="flex gap-3 pt-4 border-t border-white/10">
-                <button 
-                  onClick={() => {
-                    const note = prompt('Add a note for this client:');
-                    if (note && note.trim()) {
-                      handleAddNote(selectedClient.id, note.trim());
-                    }
-                  }}
-                  className="px-6 py-3 border border-purple-500/30 rounded-xl hover:bg-purple-500/10 transition-colors text-purple-300 hover:text-purple-200 font-medium"
-                >
-                  <MessageSquare size={16} className="inline mr-2" />
-                  ADD NOTE
-                </button>
+                <div className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add a note for this client..."
+                      value={noteInputs[selectedClient.id] || ''}
+                      onChange={(e) => setNoteInputs(prev => ({ ...prev, [selectedClient.id]: e.target.value }))}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && noteInputs[selectedClient.id]?.trim()) {
+                          handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
+                        }
+                      }}
+                      className="flex-1 px-4 py-3 border border-purple-500/30 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-black/30 text-white placeholder-gray-500"
+                    />
+                    <button
+                      onClick={() => {
+                        if (noteInputs[selectedClient.id]?.trim()) {
+                          handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
+                        }
+                      }}
+                      disabled={!noteInputs[selectedClient.id]?.trim()}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ADD NOTE
+                    </button>
+                  </div>
+                </div>
                 <div onClick={(e) => e.stopPropagation()}>
                   <CallTextActions
                     phoneE164={selectedClient.phone}
@@ -683,12 +702,14 @@ const Clients: React.FC = () => {
                     onActionLog={handleActionLog}
                   />
                 </div>
-                <button 
-                  onClick={() => handleEditClient(selectedClient)}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
-                >
-                  EDIT CLIENT
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => handleEditClient(selectedClient)}
+                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
+                  >
+                    EDIT CLIENT
+                  </button>
+                </div>
                 <button
                   onClick={() => setSelectedClient(null)}
                   className="px-6 py-3 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors text-gray-300 hover:text-white font-medium"
