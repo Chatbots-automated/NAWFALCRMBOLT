@@ -29,9 +29,7 @@ export interface CalendarResponse {
 }
 
 class CalendarService {
-  private readonly baseUrl = import.meta.env.PROD 
-    ? 'https://nawfalfilalicrm.vercel.app/api/calendar.js'
-    : '/api/calendar.js';
+  private readonly baseUrl = 'https://nawfalfilalicrm.vercel.app/api/calendar.js';
 
   async getEvents(options: {
     start?: string;
@@ -51,7 +49,13 @@ class CalendarService {
 
       const url = `${this.baseUrl}?${params.toString()}`;
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors'
+      });
       
       if (!response.ok) {
         throw new Error(`Calendar API error: ${response.status} ${response.statusText}`);
