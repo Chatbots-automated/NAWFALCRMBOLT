@@ -150,15 +150,19 @@ const Calendar: React.FC = () => {
                   <p className="text-red-400 text-sm font-semibold">{getFilterTitle()}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="px-4 py-2 text-sm border border-red-500/30 rounded-xl hover:bg-red-500/10 text-gray-300 hover:text-white transition-all duration-200 font-medium">
+                  <button 
                     onClick={() => handleFilterChange('week')}
                     className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'week' ? 'bg-gradient-to-r from-blue-500/30 to-blue-600/30 text-blue-400 border border-blue-500/40' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
+                    Week
                   </button>
+                  <button 
                     onClick={() => handleFilterChange('day')}
                     className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'day' ? 'bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-400 border border-red-500/40 shadow-lg' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
                     Day
                   </button>
-                  <button className="px-4 py-2 text-sm border border-red-500/30 rounded-xl hover:bg-red-500/10 text-gray-300 hover:text-white transition-all duration-200 font-medium">
+                  <button 
+                    onClick={() => handleFilterChange('month')}
+                    className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'month' ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-400 border border-purple-500/40' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
                     Month
                   </button>
                 </div>
