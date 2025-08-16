@@ -10,13 +10,20 @@ const Calendar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'week' | 'day' | 'month'>('day');
+  const [filteredEvents, setFilteredEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const upcomingEvents = await calendarService.getUpcomingEvents(7);
+        let days = 7; // default for week
+        if (activeFilter === 'day') days = 1;
+        if (activeFilter === 'month') days = 30;
+        
+        const upcomingEvents = await calendarService.getUpcomingEvents(days);
         setEvents(upcomingEvents);
+        setFilteredEvents(upcomingEvents);
         setError(null);
       } catch (err) {
         console.error('Failed to fetch calendar events:', err);
@@ -27,15 +34,19 @@ const Calendar: React.FC = () => {
     };
 
     fetchEvents();
-  }, []);
+  }, [activeFilter]);
 
   const handleEventCreated = () => {
     // Refresh events after creating a new one
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const upcomingEvents = await calendarService.getUpcomingEvents(7);
+        let days = 7;
+        if (activeFilter === 'day') days = 1;
+        if (activeFilter === 'month') days = 30;
+        const upcomingEvents = await calendarService.getUpcomingEvents(days);
         setEvents(upcomingEvents);
+        setFilteredEvents(upcomingEvents);
         setError(null);
       } catch (err) {
         console.error('Failed to fetch calendar events:', err);
@@ -45,6 +56,18 @@ const Calendar: React.FC = () => {
       }
     };
     fetchEvents();
+  };
+
+  const handleFilterChange = (filter: 'week' | 'day' | 'month') => {
+    setActiveFilter(filter);
+  };
+
+  const getFilterTitle = () => {
+    switch (activeFilter) {
+      case 'day': return 'TODAY\'S OPERATIONS';
+      case 'week': return 'WEEKLY OPERATIONS';
+      case 'month': return 'MONTHLY OPERATIONS';
+    }
   };
 
   // Generate time slots for the day view
@@ -64,7 +87,7 @@ const Calendar: React.FC = () => {
 
   // Get events for a specific time slot
   const getEventsForTimeSlot = (hour: number) => {
-    return events.filter(event => {
+    return filteredEvents.filter(event => {
       const eventStart = new Date(event.start.dateTime);
       const eventHour = eventStart.getHours();
      // Show events that start within this hour or span across it
@@ -124,13 +147,15 @@ const Calendar: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-1">ELITE SCHEDULE</h2>
-                  <p className="text-red-400 text-sm font-semibold">TACTICAL OPERATIONS TIMELINE</p>
+                  <p className="text-red-400 text-sm font-semibold">{getFilterTitle()}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="px-4 py-2 text-sm border border-red-500/30 rounded-xl hover:bg-red-500/10 text-gray-300 hover:text-white transition-all duration-200 font-medium">
-                    Week
+                    onClick={() => handleFilterChange('week')}
+                    className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'week' ? 'bg-gradient-to-r from-blue-500/30 to-blue-600/30 text-blue-400 border border-blue-500/40' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
                   </button>
-                  <button className="px-4 py-2 text-sm bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-400 rounded-xl border border-red-500/40 font-semibold shadow-lg">
+                    onClick={() => handleFilterChange('day')}
+                    className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'day' ? 'bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-400 border border-red-500/40 shadow-lg' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
                     Day
                   </button>
                   <button className="px-4 py-2 text-sm border border-red-500/30 rounded-xl hover:bg-red-500/10 text-gray-300 hover:text-white transition-all duration-200 font-medium">
@@ -158,7 +183,8 @@ const Calendar: React.FC = () => {
                   <h3 className="text-xl font-bold text-white mb-2">OPERATION FAILED</h3>
                   <p className="text-red-400 mb-6 font-medium">{error}</p>
                   <button 
-                    onClick={() => window.location.reload()}
+                    onClick={() => handleFilterChange('month')}
+                    className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'month' ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-400 border border-purple-500/40' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
                     className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
                   >
                     RETRY MISSION
@@ -210,7 +236,7 @@ const Calendar: React.FC = () => {
                             );
                           })}
                           {/* Show all events that don't fit in specific time slots */}
-                          {slot.hour24 === 9 && events.filter(event => {
+                          {slot.hour24 === 9 && filteredEvents.filter(event => {
                             const eventStart = new Date(event.start.dateTime);
                             const eventHour = eventStart.getHours();
                             return eventHour < 9 || eventHour > 17;
@@ -265,7 +291,7 @@ const Calendar: React.FC = () => {
                   <div className="w-10 h-10 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin mb-3"></div>
                   <p className="text-gray-400 text-sm font-medium">Loading missions...</p>
                 </div>
-              ) : events.length === 0 ? (
+              ) : filteredEvents.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/40">
                     <span className="text-green-400 text-xl font-bold">✓</span>
@@ -274,7 +300,7 @@ const Calendar: React.FC = () => {
                   <p className="text-xs text-gray-500 mt-1">No pending operations</p>
                 </div>
               ) : (
-                events.slice(0, 6).map((event) => (
+                filteredEvents.slice(0, 6).map((event) => (
                   <div key={event.id} className="group p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-all duration-200 cursor-pointer hover:scale-[1.02]">
                     <div className="flex items-start gap-3">
                       <div className={`w-4 h-4 ${calendarService.getEventTypeColor(event.subject)} rounded-full mt-1 flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform`} />
@@ -322,7 +348,7 @@ const Calendar: React.FC = () => {
                   <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                   <span className="text-gray-300 text-sm font-medium">Total Missions</span>
                 </div>
-                <span className="text-white font-bold text-lg">{events.length}</span>
+                <span className="text-white font-bold text-lg">{filteredEvents.length}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
                 <div className="flex items-center gap-2">
@@ -330,7 +356,7 @@ const Calendar: React.FC = () => {
                   <span className="text-gray-300 text-sm font-medium">Today's Ops</span>
                 </div>
                 <span className="text-white font-bold text-lg">
-                  {events.filter(event => calendarService.formatEventDate(event) === 'Today').length}
+                  {filteredEvents.filter(event => calendarService.formatEventDate(event) === 'Today').length}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
@@ -338,7 +364,7 @@ const Calendar: React.FC = () => {
                   <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                   <span className="text-gray-300 text-sm font-medium">This Week</span>
                 </div>
-                <span className="text-white font-bold text-lg">{events.length}</span>
+                <span className="text-white font-bold text-lg">{filteredEvents.length}</span>
               </div>
             </div>
           </div>
