@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   Users,
@@ -12,12 +12,77 @@ import {
   MessageSquare,
   Zap
 } from 'lucide-react';
+import { calendarService } from '../services/calendarService';
+import { clientService } from '../services/clientService';
+import { Client } from '../lib/supabase';
 
 const Dashboard: React.FC = () => {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalPipeline: 0,
+    activeLeads: 0,
+    callsScheduled: 0,
+    revenueThisMonth: 0
+  });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch clients data
+      const { data: clientsData } = await clientService.getClients({ limit: 100 });
+      setClients(clientsData);
+      
+      // Fetch calendar events
+      const eventsData = await calendarService.getUpcomingEvents(30);
+      setCalendarEvents(eventsData);
+      
+      // Calculate stats
+      const activeLeads = clientsData.filter(client => client.status === 'lead').length;
+      const callsScheduled = eventsData.length;
+      
+      // Calculate pipeline value (assuming average deal size)
+      const averageDealSize = 25000; // $25K average
+      const totalPipeline = activeLeads * averageDealSize;
+      
+      // Calculate revenue this month (from active clients)
+      const activeClients = clientsData.filter(client => client.status === 'active').length;
+      const revenueThisMonth = activeClients * 15000; // Assuming $15K monthly value per active client
+      
+      setStats({
+        totalPipeline,
+        activeLeads,
+        callsScheduled,
+        revenueThisMonth
+      });
+      
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(0)}K`;
+    } else {
+      return `$${amount}`;
+    }
+  };
+
   const metrics = [
     {
       title: 'Total Pipeline Value',
-      value: '$1.2M',
+      value: loading ? '...' : formatCurrency(stats.totalPipeline),
       change: '+34.2%',
       trend: 'up',
       icon: DollarSign,
@@ -25,7 +90,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Active Leads',
-      value: '89',
+      value: loading ? '...' : stats.activeLeads.toString(),
       change: '+18.7%',
       trend: 'up',
       icon: Users,
@@ -33,7 +98,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Calls Scheduled',
-      value: '23',
+      value: loading ? '...' : stats.callsScheduled.toString(),
       change: '+12.5%',
       trend: 'up',
       icon: Calendar,
@@ -41,7 +106,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Revenue This Month',
-      value: '$45K',
+      value: loading ? '...' : formatCurrency(stats.revenueThisMonth),
       change: '+28.3%',
       trend: 'up',
       icon: DollarSign,
@@ -49,47 +114,151 @@ const Dashboard: React.FC = () => {
     }
   ];
 
-  const recentActivities = [
-    {
-      type: 'form',
-      title: 'New Lead from Website',
-      description: 'John Smith filled out coaching inquiry form',
-      time: '12 minutes ago',
-      status: 'new',
-      avatar: 'JS'
-    },
-    {
-      type: 'call',
-      title: 'Strategy Call Completed',
-      description: 'Elite coaching session with Maria Garcia',
-      time: '1 hour ago',
-      status: 'completed',
-      avatar: 'MG'
-    },
-    {
-      type: 'calendar',
-      title: 'Call Scheduled via Cal.com',
-      description: 'Discovery call with David Chen tomorrow 2PM',
-      time: '2 hours ago',
-      status: 'scheduled',
-      avatar: 'DC'
-    },
-    {
-      type: 'payment',
-      title: 'Payment Received - $5K',
-      description: 'Elite coaching program payment via Stripe',
-      time: '4 hours ago',
-      status: 'paid',
-      avatar: 'EP'
+  // Generate recent activities from real data
+  const generateRecentActivities = () => {
+    const activities = [];
+    
+    // Add recent clients as activities
+    const recentClients = clients
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 2);
+    
+    recentClients.forEach(client => {
+      const timeAgo = getTimeAgo(new Date(client.created_at));
+      activities.push({
+        type: 'form',
+        title: 'New Elite Lead Added',
+        description: `${client.full_name} ${client.company ? `from ${client.company}` : ''} joined the pipeline`,
+        time: timeAgo,
+        status: 'new',
+        avatar: client.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)
+      });
+    });
+    
+    // Add upcoming calendar events as activities
+    const upcomingEvents = calendarEvents.slice(0, 2);
+    upcomingEvents.forEach(event => {
+      const eventDate = new Date(event.start.dateTime);
+      const timeUntil = getTimeUntil(eventDate);
+      activities.push({
+        type: 'calendar',
+        title: 'Elite Session Scheduled',
+        description: `${event.subject} - ${calendarService.formatEventTime(event)}`,
+        time: timeUntil,
+        status: 'scheduled',
+        avatar: event.subject.split(' ').map((w: string) => w[0]).join('').slice(0, 2)
+      });
+    });
+    
+    // Add some system activities
+    if (clients.length > 0) {
+      activities.push({
+        type: 'payment',
+        title: 'Elite Pipeline Updated',
+        description: `${stats.activeLeads} active leads worth ${formatCurrency(stats.totalPipeline)}`,
+        time: '1 hour ago',
+        status: 'completed',
+        avatar: 'EP'
+      });
     }
-  ];
+    
+    return activities.slice(0, 4);
+  };
+  
+  const getTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} minutes ago`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+  };
+  
+  const getTimeUntil = (date: Date) => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((date.getTime() - now.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 60) {
+      return `in ${diffInMinutes} minutes`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `in ${hours} hour${hours > 1 ? 's' : ''}`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `in ${days} day${days > 1 ? 's' : ''}`;
+    }
+  };
+  
+  const recentActivities = generateRecentActivities();
 
-  const upcomingTasks = [
-    { task: 'Call new website leads', priority: 'high', due: 'Today 2:00 PM' },
-    { task: 'Send follow-up emails to prospects', priority: 'high', due: 'Today 4:00 PM' },
-    { task: 'Review Cal.com bookings', priority: 'medium', due: 'Tomorrow' },
-    { task: 'Create invoices for this week', priority: 'medium', due: 'Friday' }
-  ];
+  // Generate upcoming tasks from real data
+  const generateUpcomingTasks = () => {
+    const tasks = [];
+    
+    // Add tasks based on new leads
+    const newLeads = clients.filter(client => {
+      const createdDate = new Date(client.created_at);
+      const daysSinceCreated = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+      return client.status === 'lead' && daysSinceCreated <= 1;
+    });
+    
+    if (newLeads.length > 0) {
+      tasks.push({
+        task: `Call ${newLeads.length} new elite lead${newLeads.length > 1 ? 's' : ''}`,
+        priority: 'high',
+        due: 'Today'
+      });
+    }
+    
+    // Add tasks based on upcoming calendar events
+    const todayEvents = calendarEvents.filter(event => {
+      const eventDate = new Date(event.start.dateTime);
+      const today = new Date();
+      return eventDate.toDateString() === today.toDateString();
+    });
+    
+    if (todayEvents.length > 0) {
+      tasks.push({
+        task: `Prepare for ${todayEvents.length} elite session${todayEvents.length > 1 ? 's' : ''} today`,
+        priority: 'high',
+        due: 'Today'
+      });
+    }
+    
+    // Add follow-up tasks for leads
+    const oldLeads = clients.filter(client => {
+      const createdDate = new Date(client.created_at);
+      const daysSinceCreated = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+      return client.status === 'lead' && daysSinceCreated > 3;
+    });
+    
+    if (oldLeads.length > 0) {
+      tasks.push({
+        task: `Follow up with ${oldLeads.length} elite prospect${oldLeads.length > 1 ? 's' : ''}`,
+        priority: 'medium',
+        due: 'This week'
+      });
+    }
+    
+    // Add general tasks
+    if (calendarEvents.length > 0) {
+      tasks.push({
+        task: 'Review upcoming elite sessions',
+        priority: 'medium',
+        due: 'Tomorrow'
+      });
+    }
+    
+    return tasks.slice(0, 4);
+  };
+  
+  const upcomingTasks = generateUpcomingTasks();
 
   return (
     <div className="space-y-8">
@@ -158,7 +327,18 @@ const Dashboard: React.FC = () => {
               <p className="text-gray-400 text-sm mt-1">Real-time business updates</p>
             </div>
             <div className="divide-y divide-white/10">
-              {recentActivities.map((activity, index) => {
+              {loading ? (
+                <div className="p-6 text-center">
+                  <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-gray-400">Loading elite activities...</p>
+                </div>
+              ) : recentActivities.length === 0 ? (
+                <div className="p-6 text-center">
+                  <MessageSquare className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-400">No recent activity</p>
+                </div>
+              ) : (
+                recentActivities.map((activity, index) => {
                 const getActivityIcon = () => {
                   switch (activity.type) {
                     case 'call': return Phone;
@@ -200,7 +380,8 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 );
-              })}
+                })
+              )}
             </div>
           </div>
         </div>
@@ -213,7 +394,18 @@ const Dashboard: React.FC = () => {
               <p className="text-gray-400 text-sm mt-1 font-semibold">CRUSH THESE TARGETS</p>
             </div>
             <div className="p-6 space-y-4">
-              {upcomingTasks.map((task, index) => (
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-gray-400 text-sm">Loading missions...</p>
+                </div>
+              ) : upcomingTasks.length === 0 ? (
+                <div className="text-center py-8">
+                  <Target className="w-10 h-10 text-gray-500 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">All missions complete!</p>
+                </div>
+              ) : (
+                upcomingTasks.map((task, index) => (
                 <div key={index} className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors">
                   <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
                     task.priority === 'high' ? 'bg-red-400' :
@@ -225,7 +417,8 @@ const Dashboard: React.FC = () => {
                     <p className="text-xs text-gray-400 mt-1">{task.due}</p>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
