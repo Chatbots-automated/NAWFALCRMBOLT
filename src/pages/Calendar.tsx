@@ -189,8 +189,6 @@ const Calendar: React.FC = () => {
                   <button 
                     onClick={() => handleFilterChange('month')}
                     className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 font-medium ${activeFilter === 'month' ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-400 border border-purple-500/40' : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'}`}>
-                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
-                  >
                     RETRY MISSION
                   </button>
                 </div>
