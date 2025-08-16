@@ -140,19 +140,42 @@ const Dashboard: React.FC = () => {
       });
     });
     
-    // Add upcoming calendar events as activities
-    const upcomingEvents = calendarEvents.slice(0, 2);
-    upcomingEvents.forEach(event => {
+    // Add calendar events as activities (both upcoming and recently created)
+    const sortedEvents = calendarEvents
+      .sort((a, b) => new Date(b.createdDateTime || b.start.dateTime).getTime() - new Date(a.createdDateTime || a.start.dateTime).getTime())
+      .slice(0, 3);
+    
+    sortedEvents.forEach(event => {
       const eventDate = new Date(event.start.dateTime);
-      const timeUntil = getTimeUntil(eventDate);
-      activities.push({
-        type: 'calendar',
-        title: 'Elite Session Scheduled',
-        description: `${event.subject} - ${calendarService.formatEventTime(event)}`,
-        time: timeUntil,
-        status: 'scheduled',
-        avatar: event.subject.split(' ').map((w: string) => w[0]).join('').slice(0, 2)
-      });
+      const createdDate = new Date(event.createdDateTime || event.start.dateTime);
+      const now = new Date();
+      
+      // Check if event was created recently (within last 24 hours)
+      const isRecentlyCreated = (now.getTime() - createdDate.getTime()) < (24 * 60 * 60 * 1000);
+      
+      if (isRecentlyCreated) {
+        // Show as recently created event
+        const timeAgo = getTimeAgo(createdDate);
+        activities.push({
+          type: 'calendar',
+          title: 'Elite Event Created',
+          description: `${event.subject} scheduled for ${calendarService.formatEventDate(event)} at ${calendarService.formatEventTime(event).split(' - ')[0]}`,
+          time: timeAgo,
+          status: 'new',
+          avatar: event.subject.split(' ').map((w: string) => w[0]).join('').slice(0, 2)
+        });
+      } else if (eventDate > now) {
+        // Show as upcoming event
+        const timeUntil = getTimeUntil(eventDate);
+        activities.push({
+          type: 'calendar',
+          title: 'Elite Session Scheduled',
+          description: `${event.subject} - ${calendarService.formatEventTime(event)}`,
+          time: timeUntil,
+          status: 'scheduled',
+          avatar: event.subject.split(' ').map((w: string) => w[0]).join('').slice(0, 2)
+        });
+      }
     });
     
     // Add some system activities
@@ -376,6 +399,7 @@ const Dashboard: React.FC = () => {
                             activity.status === 'completed' ? 'bg-green-500/20 text-green-400 border border-green-500/40' :
                             activity.status === 'sent' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' :
                             activity.status === 'scheduled' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' :
+                            activity.status === 'new' ? 'bg-red-500/20 text-red-400 border border-red-500/40' :
                             'bg-purple-500/20 text-purple-400 border border-purple-500/40'
                           }`}>
                             {activity.status.toUpperCase()}

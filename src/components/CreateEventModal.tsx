@@ -5,7 +5,7 @@ import { eventService, CreateEventRequest } from '../services/eventService';
 interface CreateEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onEventCreated: () => void;
+  onEventCreated: (eventData?: any) => void;
 }
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, onEventCreated }) => {
@@ -134,7 +134,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
       if (result.success) {
         setSuccess(true);
         setTimeout(() => {
-          onEventCreated();
+          onEventCreated(eventData);
           onClose();
           resetForm();
         }, 1500);
