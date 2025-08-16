@@ -17,7 +17,7 @@ type Page = 'dashboard' | 'communications' | 'calendar' | 'products' | 'payments
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   if (!isAuthenticated) {
     return <Login onLogin={() => setIsAuthenticated(true)} />;
