@@ -45,6 +45,9 @@ const Dashboard: React.FC = () => {
       
       // Calculate stats
       const activeLeads = clientsData.filter(client => client.status === 'lead').length;
+      console.log('Clients data:', clientsData);
+      console.log('Active leads found:', activeLeads);
+      console.log('Client statuses:', clientsData.map(c => ({ name: c.full_name, status: c.status })));
       const callsScheduled = eventsData.length;
       
       // Calculate pipeline value (assuming average deal size)
