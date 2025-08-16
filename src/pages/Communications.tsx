@@ -20,7 +20,7 @@ const Communications: React.FC = () => {
     SUBJECT_LINE: 'Elite Coaching Opportunity',
     EMAIL_BODY: 'Hi {name}, I wanted to reach out about your elite transformation journey.\n\nAre you ready to take your leadership and performance to the next level?\n\nI help elite entrepreneurs and leaders break through their limitations and achieve extraordinary results.',
     CALL_TO_ACTION: 'START YOUR TRANSFORMATION',
-    URL: 'https://filaliempire.com/apply',
+    URL: 'https://filaligroup.com',
     FOOTER_LINKS: 'filaligroup.com',
     MANAGE_PREFERENCES_URL: 'filaligroup.com',
     UNSUBSCRIBE_URL: 'filaligroup.com'
