@@ -106,11 +106,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         subject: formData.subject,
         start: {
           dateTime: startDateTimeString,
-          timeZone: 'Eastern Standard Time'
+          timeZone: 'America/New_York'
         },
         end: {
           dateTime: endDateTimeString,
-          timeZone: 'Eastern Standard Time'
+          timeZone: 'America/New_York'
         },
         location: formData.location || undefined,
         description: formData.description || undefined,

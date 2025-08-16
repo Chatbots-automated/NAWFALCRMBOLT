@@ -92,7 +92,7 @@ class EventService {
   }
 
   // Helper method to format date for Microsoft Graph
-  formatDateTimeForGraph(date: Date, timeZone: string = 'Eastern Standard Time'): string {
+  formatDateTimeForGraph(date: Date, timeZone: string = 'America/New_York'): string {
     return date.toISOString();
   }
 

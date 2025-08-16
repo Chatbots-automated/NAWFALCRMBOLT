@@ -21,7 +21,7 @@ const Calendar: React.FC = () => {
         if (activeFilter === 'day') days = 1;
         if (activeFilter === 'month') days = 30;
         
-        const upcomingEvents = await calendarService.getUpcomingEvents(days);
+        const upcomingEvents = await calendarService.getUpcomingEvents(days, 'America/New_York');
         setEvents(upcomingEvents);
         setFilteredEvents(upcomingEvents);
         setError(null);
@@ -44,7 +44,7 @@ const Calendar: React.FC = () => {
         let days = 7;
         if (activeFilter === 'day') days = 1;
         if (activeFilter === 'month') days = 30;
-        const upcomingEvents = await calendarService.getUpcomingEvents(days);
+        const upcomingEvents = await calendarService.getUpcomingEvents(days, 'America/New_York');
         setEvents(upcomingEvents);
         setFilteredEvents(upcomingEvents);
         setError(null);

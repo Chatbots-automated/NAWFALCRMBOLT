@@ -85,11 +85,11 @@ class CalendarService {
     return this.getEvents({
       start: start.toISOString(),
       end: end.toISOString(),
-      tz: 'Eastern Standard Time'
+      tz: 'America/New_York'
     });
   }
 
-  async getUpcomingEvents(days: number = 7): Promise<CalendarEvent[]> {
+  async getUpcomingEvents(days: number = 7, timeZone: string = 'America/New_York'): Promise<CalendarEvent[]> {
     const start = new Date();
     const end = new Date();
     end.setDate(end.getDate() + days);
@@ -97,7 +97,7 @@ class CalendarService {
     return this.getEvents({
       start: start.toISOString(),
       end: end.toISOString(),
-      tz: 'Eastern Standard Time',
+      tz: timeZone,
       top: 50
     });
   }
