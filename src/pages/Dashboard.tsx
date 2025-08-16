@@ -3,7 +3,7 @@ import {
   TrendingUp,
   Users,
   DollarSign,
-  Target,
+  Target, 
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
@@ -24,7 +24,9 @@ const Dashboard: React.FC = () => {
     totalPipeline: 0,
     activeLeads: 0,
     callsScheduled: 0,
-    revenueThisMonth: 0
+    revenueThisMonth: 0,
+    totalClients: 0,
+    activeClients: 0
   });
 
   useEffect(() => {
@@ -45,24 +47,24 @@ const Dashboard: React.FC = () => {
       
       // Calculate stats
       const activeLeads = clientsData.filter(client => client.status === 'lead').length;
-      console.log('Clients data:', clientsData);
-      console.log('Active leads found:', activeLeads);
-      console.log('Client statuses:', clientsData.map(c => ({ name: c.full_name, status: c.status })));
+      const activeClients = clientsData.filter(client => client.status === 'active').length;
+      const totalClients = clientsData.length;
       const callsScheduled = eventsData.length;
       
       // Calculate pipeline value (assuming average deal size)
-      const averageDealSize = 25000; // $25K average
+      const averageDealSize = 25000; // $25K average for leads
       const totalPipeline = activeLeads * averageDealSize;
       
       // Calculate revenue this month (from active clients)
-      const activeClients = clientsData.filter(client => client.status === 'active').length;
       const revenueThisMonth = activeClients * 15000; // Assuming $15K monthly value per active client
       
       setStats({
         totalPipeline,
         activeLeads,
         callsScheduled,
-        revenueThisMonth
+        revenueThisMonth,
+        totalClients,
+        activeClients
       });
       
     } catch (error) {
@@ -84,20 +86,20 @@ const Dashboard: React.FC = () => {
 
   const metrics = [
     {
-      title: 'Total Pipeline Value',
-      value: loading ? '...' : formatCurrency(stats.totalPipeline),
-      change: '+34.2%',
-      trend: 'up',
-      icon: DollarSign,
-      gradient: 'from-emerald-400 to-green-600'
-    },
-    {
-      title: 'Active Leads',
-      value: loading ? '...' : stats.activeLeads.toString(),
+      title: 'Total Elite Clients',
+      value: loading ? '...' : stats.totalClients.toString(),
       change: '+18.7%',
       trend: 'up',
       icon: Users,
       gradient: 'from-blue-400 to-indigo-600'
+    },
+    {
+      title: 'Active Elite Clients',
+      value: loading ? '...' : stats.activeClients.toString(),
+      change: '+28.3%',
+      trend: 'up',
+      icon: Target,
+      gradient: 'from-green-400 to-emerald-600'
     },
     {
       title: 'Calls Scheduled',
@@ -108,7 +110,7 @@ const Dashboard: React.FC = () => {
       gradient: 'from-purple-400 to-pink-600'
     },
     {
-      title: 'Revenue This Month',
+      title: 'Monthly Revenue',
       value: loading ? '...' : formatCurrency(stats.revenueThisMonth),
       change: '+28.3%',
       trend: 'up',
@@ -157,8 +159,8 @@ const Dashboard: React.FC = () => {
     if (clients.length > 0) {
       activities.push({
         type: 'payment',
-        title: 'Elite Pipeline Updated',
-        description: `${stats.activeLeads} active leads worth ${formatCurrency(stats.totalPipeline)}`,
+        title: 'Elite Network Updated',
+        description: `${stats.totalClients} total clients, ${stats.activeClients} active elite members`,
         time: '1 hour ago',
         status: 'completed',
         avatar: 'EP'
@@ -205,15 +207,15 @@ const Dashboard: React.FC = () => {
     const tasks = [];
     
     // Add tasks based on new leads
-    const newLeads = clients.filter(client => {
+    const newClients = clients.filter(client => {
       const createdDate = new Date(client.created_at);
       const daysSinceCreated = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-      return client.status === 'lead' && daysSinceCreated <= 1;
+      return daysSinceCreated <= 1;
     });
     
-    if (newLeads.length > 0) {
+    if (newClients.length > 0) {
       tasks.push({
-        task: `Call ${newLeads.length} new elite lead${newLeads.length > 1 ? 's' : ''}`,
+        task: `Follow up with ${newClients.length} new elite client${newClients.length > 1 ? 's' : ''}`,
         priority: 'high',
         due: 'Today'
       });
@@ -235,15 +237,15 @@ const Dashboard: React.FC = () => {
     }
     
     // Add follow-up tasks for leads
-    const oldLeads = clients.filter(client => {
+    const followUpClients = clients.filter(client => {
       const createdDate = new Date(client.created_at);
       const daysSinceCreated = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-      return client.status === 'lead' && daysSinceCreated > 3;
+      return daysSinceCreated > 3 && daysSinceCreated < 30;
     });
     
-    if (oldLeads.length > 0) {
+    if (followUpClients.length > 0) {
       tasks.push({
-        task: `Follow up with ${oldLeads.length} elite prospect${oldLeads.length > 1 ? 's' : ''}`,
+        task: `Check in with ${followUpClients.length} elite client${followUpClients.length > 1 ? 's' : ''}`,
         priority: 'medium',
         due: 'This week'
       });
