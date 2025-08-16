@@ -1,13 +1,31 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "filali-empire-crm",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Elite CRM system for FILALI EMPIRE - Conquer. Dominate. Win.",
+  "author": "FILALI EMPIRE",
+  "homepage": "https://filaligroup.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/filali-empire-crm.git"
+  },
+  "keywords": [
+    "crm",
+    "elite",
+    "coaching",
+    "business",
+    "management",
+    "react",
+    "typescript",
+    "supabase"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:netlify": "npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",

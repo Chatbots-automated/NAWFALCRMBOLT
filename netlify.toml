@@ -1,0 +1,23 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  VITE_SUPABASE_URL = "https://xvjruntzmvkjzhdpmoca.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2anJ1bnR6bXZranpoZHBtb2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNzA5MDUsImV4cCI6MjA3MDg0NjkwNX0.Xem82AL6sY8jr-jF4i6d43d7KRfCUsUYjWsbucR7YS0"
+
+[context.deploy-preview.environment]
+  VITE_SUPABASE_URL = "https://xvjruntzmvkjzhdpmoca.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2anJ1bnR6bXZranpoZHBtb2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNzA5MDUsImV4cCI6MjA3MDg0NjkwNX0.Xem82AL6sY8jr-jF4i6d43d7KRfCUsUYjWsbucR7YS0"
+
+[context.branch-deploy.environment]
+  VITE_SUPABASE_URL = "https://xvjruntzmvkjzhdpmoca.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2anJ1bnR6bXZranpoZHBtb2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNzA5MDUsImV4cCI6MjA3MDg0NjkwNX0.Xem82AL6sY8jr-jF4i6d43d7KRfCUsUYjWsbucR7YS0"
