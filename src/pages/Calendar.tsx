@@ -97,6 +97,29 @@ const Calendar: React.FC = () => {
     });
   };
 
+  // Format event date for display
+  const formatEventDate = (event: CalendarEvent) => {
+    const eventDate = new Date(event.start.dateTime);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (activeFilter === 'day') {
+      return ''; // Don't show date for day view
+    }
+    
+    if (eventDate.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (eventDate.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow';
+    } else {
+      return eventDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+  };
   // Get event color based on type
   const getEventColor = (subject: string) => {
     const lowerSubject = subject.toLowerCase();
@@ -225,7 +248,130 @@ const Calendar: React.FC = () => {
                                 onClick={() => setSelectedEvent(event)}
                                 className={`${getEventColor(event.subject)} rounded-xl p-4 cursor-pointer hover:opacity-90 transition-all duration-200 hover:scale-[1.02] shadow-lg`}
                               >
-                                <div>
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    {activeFilter !== 'day' && (
+                                      <div className="text-white/70 text-xs font-medium mb-1">
+                                        {formatEventDate(event)}
+                                      </div>
+                                    )}
+                                    <h4 className="text-white font-semibold text-sm mb-1">{event.subject}</h4>
+                                    <p className="text-white/80 text-xs">
+                                      {event.location?.displayName || 'Cal.com Video Call'}
+                                    </p>
+                                  </div>
+                                  <div className="text-right ml-2">
+                                    <span className="text-white/90 text-xs font-medium">{endTime}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {/* Show all events that don't fit in specific time slots */}
+                          {slot.hour24 === 9 && filteredEvents.filter(event => {
+                            const eventStart = new Date(event.start.dateTime);
+                            const eventHour = eventStart.getHours();
+                            return eventHour < 9 || eventHour > 17;
+                          }).map((event) => {
+                            const endTime = calendarService.formatEventTime(event).split(' - ')[1] || '';
+                            
+                            return (
+                              <div
+                                key={event.id}
+                                onClick={() => setSelectedEvent(event)}
+                                className={`${getEventColor(event.subject)} rounded-xl p-4 cursor-pointer hover:opacity-90 transition-all duration-200 hover:scale-[1.02] shadow-lg`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    {activeFilter !== 'day' && (
+                                      <div className="text-white/70 text-xs font-medium mb-1">
+                                        {formatEventDate(event)}
+                                      </div>
+                                    )}
+                                    <h4 className="text-white font-semibold text-sm mb-1">{event.subject}</h4>
+                                    <p className="text-white/80 text-xs">
+                                      {event.location?.displayName || 'Cal.com Video Call'}
+                                    </p>
+                                  </div>
+                                  <div className="text-right ml-2">
+                                    <span className="text-white/90 text-xs font-medium">{endTime}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Events Sidebar */}
+        <div className="space-y-6">
+          <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl border border-red-500/30 overflow-hidden hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300">
+            <div className="p-6 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-red-500/30 to-purple-500/30 rounded-xl border border-red-500/40">
+                  <CalendarIcon className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">MISSION QUEUE</h3>
+                  <p className="text-xs text-gray-400 font-medium">Upcoming operations</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 space-y-4">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-10 h-10 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin mb-3"></div>
+                  <p className="text-gray-400 text-sm font-medium">Loading missions...</p>
+                </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/40">
+                    <span className="text-green-400 text-xl font-bold">✓</span>
+                  </div>
+                  <p className="text-gray-300 font-medium">All clear</p>
+                  <p className="text-xs text-gray-500 mt-1">No pending operations</p>
+                </div>
+              ) : (
+                filteredEvents.slice(0, 6).map((event) => (
+                  <div key={event.id} className="group p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-all duration-200 cursor-pointer hover:scale-[1.02]">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-4 h-4 ${calendarService.getEventTypeColor(event.subject)} rounded-full mt-1 flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform`} />
+                      <div className="flex-1 min-w-0">
+                        {activeFilter !== 'day' && (
+                          <div className="text-red-400 text-xs font-medium mb-1">
+                            {formatEventDate(event)}
+                          </div>
+                        )}
+                        <h4 className="font-semibold text-white text-sm mb-2 group-hover:text-red-400 transition-colors">{event.subject}</h4>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                          <Clock size={10} className="text-red-400" />
+                          <span className="font-medium">{calendarService.formatEventTime(event)}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                          <MapPin size={10} className="text-purple-400" />
+                          <span className="font-medium">{event.location?.displayName || 'Digital Battlefield'}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                          <Users size={10} className="text-blue-400" />
+                          <span className="font-medium">{event.organizer.emailAddress.name}</span>
+                        </div>
+                        {event.bodyPreview && (
+                          <p className="text-xs text-gray-500 mt-2 line-clamp-2 bg-white/5 p-2 rounded-lg">{event.bodyPreview.substring(0, 80)}...</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
                                   <h4 className="text-white font-semibold text-sm mb-1">{event.subject}</h4>
                                   <p className="text-white/80 text-xs">
                                     {event.location?.displayName || 'Cal.com Video Call'}
