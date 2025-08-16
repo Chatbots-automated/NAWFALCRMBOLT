@@ -47,7 +47,7 @@ const Communications: React.FC = () => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="x-apple-disable-message-reformatting">
-  <title>{{SUBJECT_LINE}}</title>
+  <title>${templateVars.SUBJECT_LINE}</title>
   <style>
     /* Resets */
     body,table,td,a{ -webkit-text-size-adjust:100%; -ms-text-size-adjust:100% }
@@ -65,8 +65,8 @@ const Communications: React.FC = () => {
     .accent{ height:3px; line-height:3px; background:#e53935; }
     /* Type */
     .h1{ color:#ffffff; font-weight:900; font-size:30px; line-height:1.2; margin:0 0 12px }
-    .note{ background:#0f141d; border:1px solid #333c4b; border-radius:14px }
-    .note p{ color:#e7eaf0; font-size:16px; line-height:1.7; margin:0 0 12px }
+    .note{ background:#1a1f2e; border:1px solid #3a4553; border-radius:14px }
+    .note p{ color:#f0f2f5; font-size:16px; line-height:1.7; margin:0 0 12px }
     /* Button */
     .btn a{
       display:inline-block; background:#e53935; color:#fff!important; font-weight:900;
@@ -105,12 +105,12 @@ const Communications: React.FC = () => {
                 <!-- Title + Body -->
                 <tr>
                   <td class="pad-32">
-                    <h1 class="h1 center">{{SUBJECT_LINE}}</h1>
+                    <h1 class="h1 center">${templateVars.SUBJECT_LINE}</h1>
 
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="note">
                       <tr>
                         <td class="pad-20">
-                          {{EMAIL_BODY}}
+                          ${htmlBody}
                         </td>
                       </tr>
                     </table>
@@ -122,17 +122,17 @@ const Communications: React.FC = () => {
                       <tr>
                         <td class="btn" align="center" bgcolor="#e53935" style="border-radius:12px">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{URL}}"
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${templateVars.URL}"
                             arcsize="14%" strokecolor="#e53935" fillcolor="#e53935"
                             style="height:46px;v-text-anchor:middle;width:270px;">
                             <w:anchorlock/>
                             <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:900;">
-                              {{CALL_TO_ACTION}}
+                              ${templateVars.CALL_TO_ACTION}
                             </center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-- -->
-                          <a href="{{URL}}" target="_blank">{{CALL_TO_ACTION}}</a>
+                          <a href="${templateVars.URL}" target="_blank">${templateVars.CALL_TO_ACTION}</a>
                           <!--<![endif]-->
                         </td>
                       </tr>
@@ -154,10 +154,10 @@ const Communications: React.FC = () => {
                     <table role="presentation" width="100%">
                       <tr>
                         <td class="muted" style="font-size:12px; line-height:1.6">
-                          {{FOOTER_LINKS}}<br>
-                          <a href="{{MANAGE_PREFERENCES_URL}}" style="color:#9aa3b2;text-decoration:underline">Manage preferences</a>
+                          ${templateVars.FOOTER_LINKS}<br>
+                          <a href="${templateVars.MANAGE_PREFERENCES_URL}" style="color:#9aa3b2;text-decoration:underline">Manage preferences</a>
                           &nbsp;&middot;&nbsp;
-                          <a href="{{UNSUBSCRIBE_URL}}" style="color:#9aa3b2;text-decoration:underline">Unsubscribe</a>
+                          <a href="${templateVars.UNSUBSCRIBE_URL}" style="color:#9aa3b2;text-decoration:underline">Unsubscribe</a>
                         </td>
                       </tr>
                     </table>
