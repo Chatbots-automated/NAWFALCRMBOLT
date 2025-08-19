@@ -501,25 +501,14 @@ const Payments: React.FC = () => {
                             <User className="w-5 h-5 text-blue-400" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-white">
-                              {transaction.customer_email || 'Anonymous'}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {productName}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              ID: {transaction.session_id.slice(-8)}
-                            </p>
+                            <p className="text-sm font-medium text-white">{transaction.customer_email || 'Anonymous'}</p>
+                            <p className="text-xs text-gray-400">ID: {transaction.session_id.slice(-8)}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-sm font-medium text-white">
-                            {transaction.description || 
-                             filteredProducts.find(p => p.product_id === transaction.product_id)?.product?.name || 
-                             'Unknown Product'}
-                          </p>
+                          <p className="text-sm font-medium text-white">{productName}</p>
                           <p className="text-xs text-gray-400">
                             Qty: {transaction.quantity} × {stripeService.formatCurrency(transaction.amount_total / transaction.quantity, transaction.currency)}
                           </p>
