@@ -488,12 +488,12 @@ const Payments: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {filteredTransactions.map((transaction) => (
-                // Find the product data for this transaction
-                const productData = filteredProducts.find(p => p.product_id === transaction.product_id);
-                const productName = productData?.product?.name || transaction.description || `Product ${transaction.product_id.slice(-4)}`;
-                
-                return (
+                {filteredTransactions.map((transaction) => {
+                  // Find the product data for this transaction
+                  const productData = filteredProducts.find(p => p.product_id === transaction.product_id);
+                  const productName = productData?.product?.name || transaction.description || `Product ${transaction.product_id.slice(-4)}`;
+                  
+                  return (
                   <tr key={transaction.session_id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -546,8 +546,8 @@ const Payments: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                );
-              })}
+                  );
+                })}
               </tbody>
             </table>
           )}
