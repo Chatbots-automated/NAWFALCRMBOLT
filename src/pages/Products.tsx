@@ -227,7 +227,7 @@ const Products: React.FC = () => {
                           <Package className="w-6 h-6 text-red-400" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{product.product?.name || 'Unknown Product'}</h3>
+                          <h3 className="text-lg font-semibold text-white">{product.product?.name || `Product ${product.product_id.slice(-4)}`}</h3>
                           <span className="text-sm text-gray-400">{product.product?.type || 'service'}</span>
                         </div>
                       </div>
@@ -260,9 +260,11 @@ const Products: React.FC = () => {
                       </div>
                     </div>
                     
-                    <p className="text-gray-300 text-sm mb-4 leading-relaxed">
-                      {product.product?.description || 'No description available'}
-                    </p>
+                    {product.product?.description && (
+                      <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+                        {product.product.description}
+                      </p>
+                    )}
                     
                     {/* Product Stats */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
@@ -271,7 +273,7 @@ const Products: React.FC = () => {
                         <p className="text-xs text-gray-400">Orders</p>
                       </div>
                       <div className="text-center p-3 bg-white/5 rounded-lg">
-                        <p className="text-lg font-bold text-green-400">{stripeService.formatCompactCurrency(product.totals.revenue)}</p>
+                        <p className="text-lg font-bold text-green-400">{stripeService.formatCurrency(product.totals.revenue)}</p>
                         <p className="text-xs text-gray-400">Revenue</p>
                       </div>
                       <div className="text-center p-3 bg-white/5 rounded-lg">
@@ -283,7 +285,7 @@ const Products: React.FC = () => {
                     <div className="flex items-center justify-between pt-4 border-t border-white/10">
                       <div className="flex items-center gap-2 text-sm text-gray-400">
                         <Package size={14} />
-                        <span>{product.links.length} payment link{product.links.length !== 1 ? 's' : ''}</span>
+                        <span>{product.links?.length || 0} payment link{(product.links?.length || 0) !== 1 ? 's' : ''}</span>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-400">
