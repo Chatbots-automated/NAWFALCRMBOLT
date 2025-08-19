@@ -1,18 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, Eye, Download, Send, TrendingUp, DollarSign, Clock, CheckCircle, AlertTriangle, Zap, RefreshCw, ExternalLink, User, Calendar, Package } from 'lucide-react';
-import { stripeService, StripeTransaction, PaymentLink } from '../services/stripeService';
+import { 
+  CreditCard, 
+  Plus, 
+  Eye, 
+  Download, 
+  TrendingUp, 
+  DollarSign, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle, 
+  Zap, 
+  RefreshCw, 
+  ExternalLink, 
+  User, 
+  Calendar, 
+  Package,
+  Filter,
+  Search,
+  BarChart3,
+  Users,
+  Target,
+  ShoppingCart
+} from 'lucide-react';
+import { stripeService, ProductSummary, StripeTransaction, CatalogFilters } from '../services/stripeService';
 
 const Payments: React.FC = () => {
-  const [transactions, setTransactions] = useState<StripeTransaction[]>([]);
+  const [productSummaries, setProductSummaries] = useState<ProductSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPaymentLink, setSelectedPaymentLink] = useState<string>('all');
-  const [paymentLinks, setPaymentLinks] = useState<PaymentLink[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<'30days' | 'thisMonth' | 'thisYear' | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalTransactions: 0,
-    thisMonth: 0,
-    avgTransaction: 0
+    totalProducts: 0,
+    totalCustomers: 0,
+    averageOrderValue: 0,
+    thisMonthRevenue: 0
   });
   const [revenueChart, setRevenueChart] = useState<{ labels: string[]; data: number[] }>({
     labels: [],
@@ -20,60 +46,105 @@ const Payments: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchPaymentData();
-    setPaymentLinks(stripeService.getPaymentLinks());
-  }, []);
+    fetchStripeData();
+  }, [selectedPeriod, showActiveOnly]);
 
-  const fetchPaymentData = async () => {
+  const fetchStripeData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const data = await stripeService.getAllTransactions();
+      // Build filters based on selected period
+      let filters: CatalogFilters = {
+        active: showActiveOnly,
+        include_products: true,
+        include_prices: true
+      };
+
+      switch (selectedPeriod) {
+        case '30days':
+          filters = { ...filters, ...stripeService.getLast30DaysFilter() };
+          break;
+        case 'thisMonth':
+          filters = { ...filters, ...stripeService.getThisMonthFilter() };
+          break;
+        case 'thisYear':
+          filters = { ...filters, ...stripeService.getThisYearFilter() };
+          break;
+        case 'all':
+        default:
+          // No date filters for 'all'
+          break;
+      }
+
+      const catalogData = await stripeService.getCatalogData(filters);
+      setProductSummaries(catalogData.products);
       
-      setTransactions(data.allTransactions);
+      // Calculate comprehensive stats
+      const metrics = stripeService.getConversionMetrics(catalogData.products);
       
-      // Calculate this month's revenue
-      const now = new Date();
-      const thisMonth = data.allTransactions.filter(t => {
-        const transactionDate = new Date(t.created_unix * 1000);
-        return transactionDate.getMonth() === now.getMonth() && 
-               transactionDate.getFullYear() === now.getFullYear();
-      }).reduce((sum, t) => sum + t.amount_total, 0);
-      
-      const avgTransaction = data.totalTransactions > 0 ? data.totalRevenue / data.totalTransactions : 0;
+      // Calculate this month's revenue separately
+      const thisMonthFilters = stripeService.getThisMonthFilter();
+      const thisMonthData = await stripeService.getAllTransactions(thisMonthFilters);
       
       setStats({
-        totalRevenue: data.totalRevenue,
-        totalTransactions: data.totalTransactions,
-        thisMonth,
-        avgTransaction
+        totalRevenue: metrics.totalRevenue,
+        totalTransactions: metrics.totalOrders,
+        totalProducts: catalogData.count_products,
+        totalCustomers: metrics.totalCustomers,
+        averageOrderValue: metrics.averageOrderValue,
+        thisMonthRevenue: thisMonthData.totalRevenue
       });
       
       // Generate revenue chart data
-      const chartData = stripeService.getRevenueByPeriod(data.allTransactions, 'month');
+      const chartData = await stripeService.getRevenueByPeriod('month', filters);
       setRevenueChart(chartData);
       
     } catch (err) {
-      console.error('Failed to fetch payment data:', err);
-      setError('Failed to load payment data. Please try again.');
+      console.error('Failed to fetch Stripe data:', err);
+      setError('Failed to load Stripe data. Please check your connection.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredTransactions = selectedPaymentLink === 'all' 
-    ? transactions 
-    : transactions.filter(t => {
-        const link = paymentLinks.find(pl => pl.id === selectedPaymentLink);
-        return link && t.lines.some(line => line.description?.includes(link.name.split(' ')[0]));
-      });
+  // Filter products and transactions based on search and selection
+  const getFilteredData = () => {
+    let filteredProducts = productSummaries;
+    
+    // Filter by search query
+    if (searchQuery) {
+      filteredProducts = productSummaries.filter(product => 
+        product.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.product?.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.transactions.some(t => 
+          t.customer_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
+    
+    // Filter by selected product
+    if (selectedProduct !== 'all') {
+      filteredProducts = filteredProducts.filter(p => p.product_id === selectedProduct);
+    }
+    
+    // Get all transactions from filtered products
+    const allTransactions = filteredProducts.flatMap(p => p.transactions);
+    
+    return {
+      products: filteredProducts,
+      transactions: allTransactions.sort((a, b) => b.created_unix - a.created_unix)
+    };
+  };
+
+  const { products: filteredProducts, transactions: filteredTransactions } = getFilteredData();
 
   const revenueMetrics = [
     {
       title: 'Total Revenue',
       value: stripeService.formatCurrency(stats.totalRevenue),
-      change: '+100%',
+      change: `${stats.totalTransactions} sales`,
       trend: 'up',
       icon: DollarSign,
       color: 'from-emerald-400 to-green-600',
@@ -81,36 +152,38 @@ const Payments: React.FC = () => {
       iconBg: 'bg-emerald-500'
     },
     {
-      title: 'Total Transactions',
-      value: stats.totalTransactions.toString(),
-      change: `${stats.totalTransactions} sales`,
+      title: 'Elite Products',
+      value: stats.totalProducts.toString(),
+      change: `${productSummaries.filter(p => p.totals.revenue > 0).length} selling`,
       trend: 'up',
-      icon: CreditCard,
+      icon: Package,
       color: 'from-blue-400 to-indigo-600',
       bgColor: 'bg-blue-500/20',
       iconBg: 'bg-blue-500'
     },
     {
-      title: 'This Month',
-      value: stripeService.formatCurrency(stats.thisMonth),
-      change: 'Current month',
+      title: 'Elite Customers',
+      value: stats.totalCustomers.toString(),
+      change: 'Unique buyers',
       trend: 'up',
-      icon: Calendar,
+      icon: Users,
       color: 'from-purple-400 to-pink-600',
       bgColor: 'bg-purple-500/20',
       iconBg: 'bg-purple-500'
     },
     {
-      title: 'Avg Transaction',
-      value: stripeService.formatCurrency(stats.avgTransaction),
-      change: 'Per sale',
+      title: 'Avg Order Value',
+      value: stripeService.formatCurrency(stats.averageOrderValue),
+      change: 'Per transaction',
       trend: 'up',
-      icon: TrendingUp,
+      icon: Target,
       color: 'from-orange-400 to-red-600',
       bgColor: 'bg-orange-500/20',
       iconBg: 'bg-orange-500'
     }
   ];
+
+  const topProducts = stripeService.getTopProducts(productSummaries, 4);
 
   return (
     <div className="space-y-8">
@@ -118,36 +191,73 @@ const Payments: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold text-white">
-            ELITE REVENUE
-            <span className="block text-3xl bg-gradient-to-r from-red-500 to-purple-500 bg-clip-text text-transparent">
-              COMMAND CENTER
+            FILALI EMPIRE
+            <span className="block text-4xl bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent font-black">
+              REVENUE COMMAND
             </span>
           </h1>
-          <p className="text-gray-300 mt-2">Stripe payments, transactions, and elite financial tracking</p>
+          <p className="text-gray-300 mt-2 font-semibold">DYNAMIC STRIPE INTEGRATION. REAL-TIME DOMINATION.</p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={selectedPaymentLink}
-            onChange={(e) => setSelectedPaymentLink(e.target.value)}
-            className="px-4 py-2 bg-black/30 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 text-white"
-          >
-            <option value="all">All Products</option>
-            {paymentLinks.map((link) => (
-              <option key={link.id} value={link.id}>{link.name}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedPeriod('all')}
+              className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                selectedPeriod === 'all' 
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/40' 
+                  : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'
+              }`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => setSelectedPeriod('thisYear')}
+              className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                selectedPeriod === 'thisYear' 
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/40' 
+                  : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'
+              }`}
+            >
+              This Year
+            </button>
+            <button
+              onClick={() => setSelectedPeriod('thisMonth')}
+              className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                selectedPeriod === 'thisMonth' 
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/40' 
+                  : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'
+              }`}
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => setSelectedPeriod('30days')}
+              className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                selectedPeriod === '30days' 
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/40' 
+                  : 'border border-red-500/30 hover:bg-red-500/10 text-gray-300 hover:text-white'
+              }`}
+            >
+              Last 30 Days
+            </button>
+          </div>
           <button 
-            onClick={fetchPaymentData}
+            onClick={fetchStripeData}
             disabled={loading}
             className="px-6 py-3 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors text-gray-300 hover:text-white font-medium disabled:opacity-50"
           >
             <RefreshCw size={16} className={`inline mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold">
-            <Plus size={16} />
-            NEW PAYMENT LINK
-          </button>
+          <a
+            href="https://dashboard.stripe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold"
+          >
+            <ExternalLink size={16} />
+            STRIPE DASHBOARD
+          </a>
         </div>
       </div>
 
@@ -178,15 +288,75 @@ const Payments: React.FC = () => {
         })}
       </div>
 
+      {/* Filters and Search */}
+      <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-red-500/20">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search products, customers, transactions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-64 bg-black/30 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:bg-black/50 transition-all text-white placeholder-gray-400"
+              />
+            </div>
+            
+            <select
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="px-4 py-2 bg-black/30 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 text-white"
+            >
+              <option value="all">All Products</option>
+              {productSummaries.map((product) => (
+                <option key={product.product_id} value={product.product_id}>
+                  {product.product?.name || product.product_id}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-gray-300">
+              <input
+                type="checkbox"
+                checked={showActiveOnly}
+                onChange={(e) => setShowActiveOnly(e.target.checked)}
+                className="rounded border-red-500/30 bg-black/30 text-red-500 focus:ring-red-500"
+              />
+              <span className="text-sm font-medium">Active Products Only</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       {/* Revenue Chart */}
       <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-sm border border-red-500/20 overflow-hidden">
         <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-semibold text-white">REVENUE TREND</h2>
-          <p className="text-gray-400 text-sm mt-1">Monthly revenue performance</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-white">ELITE REVENUE TREND</h2>
+              <p className="text-gray-400 text-sm mt-1">Monthly revenue performance across all products</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-red-400" />
+              <span className="text-sm text-gray-300 font-medium">
+                {selectedPeriod === 'all' ? 'All Time' : 
+                 selectedPeriod === 'thisYear' ? 'This Year' :
+                 selectedPeriod === 'thisMonth' ? 'This Month' : 'Last 30 Days'}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="p-6">
           <div className="h-64 flex items-end justify-between gap-4">
-            {revenueChart.data.length > 0 ? (
+            {loading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
+                <span className="ml-3 text-white font-medium">Loading revenue data...</span>
+              </div>
+            ) : revenueChart.data.length > 0 ? (
               revenueChart.data.map((value, index) => {
                 const maxValue = Math.max(...revenueChart.data);
                 const height = maxValue > 0 ? (value / maxValue) * 200 : 0;
@@ -208,10 +378,46 @@ const Payments: React.FC = () => {
               })
             ) : (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-gray-400">No revenue data available</p>
+                <p className="text-gray-400">No revenue data available for selected period</p>
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Top Products */}
+      <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-sm border border-red-500/20 overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h2 className="text-xl font-semibold text-white">TOP ELITE PRODUCTS</h2>
+          <p className="text-gray-400 text-sm mt-1">Your highest performing products</p>
+        </div>
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
+              <span className="ml-3 text-white font-medium">Loading products...</span>
+            </div>
+          ) : topProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Sales Data</h3>
+              <p className="text-gray-400">No products have generated revenue yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {topProducts.map((product, index) => (
+                <div key={product.product_id} className="text-center p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3 border border-red-500/40">
+                    {product.product?.name.split(' ').map(w => w[0]).join('').slice(0, 2) || 'PR'}
+                  </div>
+                  <h3 className="font-semibold text-white mb-1 text-sm">{product.product?.name || 'Unknown Product'}</h3>
+                  <p className="text-2xl font-bold text-red-400 mb-1">{product.totals.orders}</p>
+                  <p className="text-sm text-gray-400">sales</p>
+                  <p className="text-lg font-semibold text-green-400 mt-2">{stripeService.formatCurrency(product.totals.revenue)}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -220,12 +426,15 @@ const Payments: React.FC = () => {
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-white">STRIPE TRANSACTIONS</h2>
-              <p className="text-gray-400 text-sm mt-1">Real-time payment data from Stripe</p>
+              <h2 className="text-xl font-semibold text-white">ELITE TRANSACTIONS</h2>
+              <p className="text-gray-400 text-sm mt-1">Real-time payment data from Stripe catalog</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm border border-green-500/40 font-medium">
                 Live Data
+              </span>
+              <span className="text-sm text-gray-300">
+                {filteredTransactions.length} transactions
               </span>
             </div>
           </div>
@@ -248,7 +457,7 @@ const Payments: React.FC = () => {
               <h3 className="text-xl font-bold text-white mb-2">Failed to Load</h3>
               <p className="text-red-400 mb-6 font-medium">{error}</p>
               <button 
-                onClick={fetchPaymentData}
+                onClick={fetchStripeData}
                 className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold">
                 Retry Loading
               </button>
@@ -259,7 +468,12 @@ const Payments: React.FC = () => {
                 <CreditCard className="w-10 h-10 text-gray-400" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">No Transactions Found</h3>
-              <p className="text-gray-400 mb-6">No payments have been processed yet</p>
+              <p className="text-gray-400 mb-6">
+                {searchQuery || selectedProduct !== 'all' 
+                  ? 'No transactions match your current filters' 
+                  : 'No payments have been processed yet'
+                }
+              </p>
             </div>
           ) : (
             <table className="w-full">
@@ -293,16 +507,12 @@ const Payments: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        {transaction.lines.map((line, index) => (
-                          <div key={index} className="mb-1">
-                            <p className="text-sm font-medium text-white">
-                              {line.description || 'Unknown Product'}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              Qty: {line.quantity} × {stripeService.formatCurrency(line.amount_total / line.quantity, line.currency)}
-                            </p>
-                          </div>
-                        ))}
+                        <p className="text-sm font-medium text-white">
+                          {transaction.description || 'Unknown Product'}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Qty: {transaction.quantity} × {stripeService.formatCurrency(transaction.amount_total / transaction.quantity, transaction.currency)}
+                        </p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -347,70 +557,88 @@ const Payments: React.FC = () => {
         </div>
       </div>
 
-      {/* Payment Links Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-red-500/20">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl">
-              <Package className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white">Payment Links</h3>
-              <p className="text-sm text-gray-400">Manage your Stripe payment links</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {paymentLinks.map((link) => (
-              <div key={link.id} className="p-4 bg-white/5 rounded-xl border border-white/10">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-white">{link.name}</h4>
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    <ExternalLink size={16} />
-                  </a>
-                </div>
-                <p className="text-xs text-gray-400">{link.description}</p>
-                <p className="text-xs text-gray-500 mt-1 font-mono break-all">{link.url}</p>
-              </div>
-            ))}
-          </div>
+      {/* Product Performance Grid */}
+      <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-sm border border-red-500/20 overflow-hidden">
+        <div className="p-6 border-b border-white/10">
+          <h2 className="text-xl font-semibold text-white">PRODUCT PERFORMANCE</h2>
+          <p className="text-gray-400 text-sm mt-1">Detailed breakdown by product</p>
         </div>
-
-        <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-red-500/20">
-          <h3 className="font-semibold text-white mb-4">Revenue Insights</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Conversion Rate</span>
-                <span className="text-sm font-medium text-white">100%</span>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-2">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-              </div>
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
+              <span className="ml-3 text-white font-medium">Loading product data...</span>
             </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Revenue Growth</span>
-                <span className="text-sm font-medium text-white">+100%</span>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-2">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-              </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Products Found</h3>
+              <p className="text-gray-400">No products match your current filters</p>
             </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Customer Satisfaction</span>
-                <span className="text-sm font-medium text-white">98%</span>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-2">
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: '98%' }}></div>
-              </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredProducts.map((product) => (
+                <div key={product.product_id} className="border border-white/10 rounded-xl p-6 hover:bg-white/5 transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-gradient-to-br from-red-500/30 to-purple-500/30 rounded-xl border border-red-500/40">
+                        <Package className="w-6 h-6 text-red-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{product.product?.name || 'Unknown Product'}</h3>
+                        <p className="text-sm text-gray-400">{product.product?.description || 'No description'}</p>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full mt-2 ${
+                          product.product?.active 
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/40' 
+                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/40'
+                        }`}>
+                          {product.product?.active ? 'ACTIVE' : 'INACTIVE'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <p className="text-2xl font-bold text-white">{product.totals.orders}</p>
+                      <p className="text-xs text-gray-400">Orders</p>
+                    </div>
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <p className="text-2xl font-bold text-green-400">{stripeService.formatCompactCurrency(product.totals.revenue)}</p>
+                      <p className="text-xs text-gray-400">Revenue</p>
+                    </div>
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-400">{product.totals.unique_buyers}</p>
+                      <p className="text-xs text-gray-400">Customers</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <ShoppingCart size={14} />
+                      <span>{product.links.length} payment link{product.links.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setSelectedProduct(product.product_id)}
+                        className="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <a
+                        href={`https://dashboard.stripe.com/products/${product.product_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-gray-400 hover:text-purple-400 rounded-lg hover:bg-purple-500/10 transition-colors"
+                      >
+                        <ExternalLink size={16} />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

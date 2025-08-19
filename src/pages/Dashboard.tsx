@@ -49,20 +49,27 @@ const Dashboard: React.FC = () => {
       setCalendarEvents(eventsData);
       
       // Fetch Stripe data
-      let stripeData = { totalRevenue: 0, totalTransactions: 0, allTransactions: [] };
+      let stripeData = { totalRevenue: 0, totalTransactions: 0, totalCustomers: 0 }
       try {
-        stripeData = await stripeService.getAllTransactions();
+        const catalogData = await stripeService.getAllTransactions()
+        stripeData = {
+          totalRevenue: catalogData.totalRevenue,
+          totalTransactions: catalogData.totalTransactions,
+          totalCustomers: catalogData.totalCustomers
+        }
       } catch (error) {
         console.error('Failed to fetch Stripe data:', error);
       }
       
       // Calculate this month's revenue from Stripe
-      const now = new Date();
-      const thisMonthRevenue = stripeData.allTransactions.filter(t => {
-        const transactionDate = new Date(t.created_unix * 1000);
-        return transactionDate.getMonth() === now.getMonth() && 
-               transactionDate.getFullYear() === now.getFullYear();
-      }).reduce((sum, t) => sum + t.amount_total, 0);
+      let thisMonthRevenue = 0
+      try {
+        const thisMonthFilters = stripeService.getThisMonthFilter()
+        const thisMonthData = await stripeService.getAllTransactions(thisMonthFilters)
+        thisMonthRevenue = thisMonthData.totalRevenue
+      } catch (error) {
+        console.error('Failed to fetch this month revenue:', error)
+      }
       
       // Calculate stats
       const activeLeads = clientsData.filter(client => client.status === 'lead').length;
