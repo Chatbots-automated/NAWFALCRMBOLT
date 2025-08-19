@@ -103,10 +103,19 @@ class StripeService {
       const url = `${this.apiUrl}?${params.toString()}`;
       
       const response = await fetch(url, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          active: filters.active,
+          created_gte: filters.created_gte,
+          created_lte: filters.created_lte,
+          product_ids: filters.product_ids,
+          include_products: filters.include_products,
+          include_prices: filters.include_prices,
+          maxPages: filters.maxPages
+        })
       });
 
       if (!response.ok) {
