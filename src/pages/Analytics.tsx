@@ -158,7 +158,7 @@ const Analytics: React.FC = () => {
   const kpiMetrics = [
     {
       title: 'Total Revenue',
-      value: stripeService.formatCurrency(stripeData.totalRevenue),
+      value: loading ? '...' : stripeService.formatCurrency(stripeData.totalRevenue),
       change: `${analytics.revenueGrowthRate >= 0 ? '+' : ''}${analytics.revenueGrowthRate.toFixed(1)}%`,
       trend: analytics.revenueGrowthRate >= 0 ? 'up' : 'down',
       icon: DollarSign,
@@ -167,7 +167,7 @@ const Analytics: React.FC = () => {
     },
     {
       title: 'Elite Clients',
-      value: clientData.totalClients.toString(),
+      value: loading ? '...' : clientData.totalClients.toString(),
       change: `${analytics.clientGrowthRate >= 0 ? '+' : ''}${analytics.clientGrowthRate.toFixed(1)}%`,
       trend: analytics.clientGrowthRate >= 0 ? 'up' : 'down',
       icon: Users,
@@ -176,7 +176,7 @@ const Analytics: React.FC = () => {
     },
     {
       title: 'Conversion Rate',
-      value: `${analytics.conversionRate.toFixed(1)}%`,
+      value: loading ? '...' : `${analytics.conversionRate.toFixed(1)}%`,
       change: 'Client to Customer',
       trend: 'up',
       icon: Target,
@@ -185,7 +185,7 @@ const Analytics: React.FC = () => {
     },
     {
       title: 'Avg Client Value',
-      value: stripeService.formatCurrency(analytics.averageClientValue),
+      value: loading ? '...' : stripeService.formatCurrency(analytics.averageClientValue),
       change: 'Per customer',
       trend: 'up',
       icon: TrendingUp,
@@ -511,7 +511,7 @@ const Analytics: React.FC = () => {
                 <DollarSign className="w-8 h-8 text-green-400" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Revenue Performance</h3>
-              <p className="text-2xl font-bold text-green-400 mb-2">{stripeService.formatCompactCurrency(stripeData.totalRevenue)}</p>
+              <p className="text-2xl font-bold text-green-400 mb-2">{loading ? '...' : stripeService.formatCurrency(stripeData.totalRevenue)}</p>
               <p className="text-sm text-gray-400">Total revenue generated</p>
               <p className="text-xs text-gray-500 mt-2">
                 {analytics.revenueGrowthRate >= 0 ? 'Growing' : 'Declining'} at {Math.abs(analytics.revenueGrowthRate).toFixed(1)}% rate
