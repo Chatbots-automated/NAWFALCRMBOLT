@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { calendarService } from '../services/calendarService';
 import { clientService } from '../services/clientService';
+import { stripeService } from '../services/stripeService';
 import { Client } from '../lib/supabase';
 
 const Dashboard: React.FC = () => {
@@ -25,6 +26,8 @@ const Dashboard: React.FC = () => {
     activeLeads: 0,
     callsScheduled: 0,
     revenueThisMonth: 0,
+    totalRevenue: 0,
+    totalTransactions: 0,
     totalClients: 0,
     activeClients: 0
   });
@@ -45,6 +48,22 @@ const Dashboard: React.FC = () => {
       const eventsData = await calendarService.getUpcomingEvents(30);
       setCalendarEvents(eventsData);
       
+      // Fetch Stripe data
+      let stripeData = { totalRevenue: 0, totalTransactions: 0, allTransactions: [] };
+      try {
+        stripeData = await stripeService.getAllTransactions();
+      } catch (error) {
+        console.error('Failed to fetch Stripe data:', error);
+      }
+      
+      // Calculate this month's revenue from Stripe
+      const now = new Date();
+      const thisMonthRevenue = stripeData.allTransactions.filter(t => {
+        const transactionDate = new Date(t.created_unix * 1000);
+        return transactionDate.getMonth() === now.getMonth() && 
+               transactionDate.getFullYear() === now.getFullYear();
+      }).reduce((sum, t) => sum + t.amount_total, 0);
+      
       // Calculate stats
       const activeLeads = clientsData.filter(client => client.status === 'lead').length;
       const activeClients = clientsData.filter(client => client.status === 'active').length;
@@ -55,14 +74,13 @@ const Dashboard: React.FC = () => {
       const averageDealSize = 25000; // $25K average for leads
       const totalPipeline = activeLeads * averageDealSize;
       
-      // Calculate revenue this month (from active clients)
-      const revenueThisMonth = activeClients * 15000; // Assuming $15K monthly value per active client
-      
       setStats({
         totalPipeline,
         activeLeads,
         callsScheduled,
-        revenueThisMonth,
+        revenueThisMonth: thisMonthRevenue,
+        totalRevenue: stripeData.totalRevenue,
+        totalTransactions: stripeData.totalTransactions,
         totalClients,
         activeClients
       });
@@ -94,12 +112,12 @@ const Dashboard: React.FC = () => {
       gradient: 'from-blue-400 to-indigo-600'
     },
     {
-      title: 'Active Elite Clients',
-      value: loading ? '...' : stats.activeClients.toString(),
-      change: '+28.3%',
+      title: 'Total Revenue',
+      value: loading ? '...' : formatCurrency(stats.totalRevenue),
+      change: `${stats.totalTransactions} sales`,
       trend: 'up',
-      icon: Target,
-      gradient: 'from-green-400 to-emerald-600'
+      icon: DollarSign,
+      gradient: 'from-emerald-400 to-green-600'
     },
     {
       title: 'Calls Scheduled',
@@ -114,7 +132,7 @@ const Dashboard: React.FC = () => {
       value: loading ? '...' : formatCurrency(stats.revenueThisMonth),
       change: '+28.3%',
       trend: 'up',
-      icon: DollarSign,
+      icon: Target,
       gradient: 'from-orange-400 to-red-600'
     }
   ];
