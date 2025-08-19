@@ -71,8 +71,8 @@ export interface CatalogFilters {
   created_gte?: number;
   created_lte?: number;
   product_ids?: string[];
-  include_products?: boolean;
-  include_prices?: boolean;
+  include_products?: boolean | number;
+  include_prices?: boolean | number;
   maxPages?: number;
 }
 
@@ -112,8 +112,8 @@ class StripeService {
           created_gte: filters.created_gte,
           created_lte: filters.created_lte,
           product_ids: filters.product_ids,
-          include_products: filters.include_products,
-          include_prices: filters.include_prices,
+          include_products: filters.include_products ? 1 : 0,
+          include_prices: filters.include_prices ? 1 : 0,
           maxPages: filters.maxPages
         })
       });

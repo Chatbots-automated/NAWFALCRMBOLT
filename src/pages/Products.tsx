@@ -26,8 +26,8 @@ const Products: React.FC = () => {
       
       const catalogData = await stripeService.getCatalogData({
         active: showActiveOnly,
-        include_products: true,
-        include_prices: true
+        include_products: 1,
+        include_prices: 1
       });
       
       setProducts(catalogData.products);

@@ -57,8 +57,8 @@ const Payments: React.FC = () => {
       // Build filters based on selected period
       let filters: CatalogFilters = {
         active: showActiveOnly,
-        include_products: true,
-        include_prices: true
+        include_products: 1,
+        include_prices: 1
       };
 
       switch (selectedPeriod) {
