@@ -77,7 +77,7 @@ export interface CatalogFilters {
 }
 
 class StripeService {
-  private readonly apiUrl = 'https://nawfalfilalicrm.vercel.app/api/catalog-transactions';
+  private readonly apiUrl = 'https://nawfalfilalicrm.vercel.app/api/transactions-by-link.js';
 
   async getCatalogData(filters: CatalogFilters = {}): Promise<CatalogResponse> {
     try {
