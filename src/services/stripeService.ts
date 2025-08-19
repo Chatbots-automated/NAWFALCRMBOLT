@@ -297,7 +297,7 @@ class StripeService {
   // Get top performing products
   getTopProducts(productSummaries: ProductSummary[], limit: number = 5): ProductSummary[] {
     return productSummaries
-      .filter(p => p.totals.revenue > 0)
+      .filter(p => p.totals.orders > 0) // Changed from revenue to orders to include $0 test products
       .sort((a, b) => b.totals.revenue - a.totals.revenue)
       .slice(0, limit);
   }

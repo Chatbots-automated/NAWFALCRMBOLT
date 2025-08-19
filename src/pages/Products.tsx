@@ -128,8 +128,16 @@ const Products: React.FC = () => {
           },
           {
             title: 'Top Product',
-            value: loading ? '...' : (stripeService.getTopProducts(products, 1)[0]?.product?.name.split(' ').slice(0, 2).join(' ') || 'None'),
-            subtitle: loading ? '...' : (stripeService.getTopProducts(products, 1)[0] ? `${stripeService.getTopProducts(products, 1)[0].totals.orders} sales` : 'No sales'),
+            value: loading ? '...' : (() => {
+              const topProduct = stripeService.getTopProducts(products, 1)[0];
+              if (!topProduct) return 'None';
+              const name = topProduct.product?.name || 'Unknown';
+              return name.split(' ').slice(0, 2).join(' ');
+            })(),
+            subtitle: loading ? '...' : (() => {
+              const topProduct = stripeService.getTopProducts(products, 1)[0];
+              return topProduct ? `${topProduct.totals.orders} sales` : 'No sales';
+            })(),
             icon: TrendingUp,
             color: 'bg-orange-500/20',
             iconColor: 'text-orange-400'

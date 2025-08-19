@@ -408,7 +408,7 @@ const Payments: React.FC = () => {
               {topProducts.map((product, index) => (
                 <div key={product.product_id} className="text-center p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all">
                   <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3 border border-red-500/40">
-                    {product.product?.name.split(' ').map(w => w[0]).join('').slice(0, 2) || 'PR'}
+                    {product.product?.name ? product.product.name.split(' ').map(w => w[0]).join('').slice(0, 2) : 'PR'}
                   </div>
                   <h3 className="font-semibold text-white mb-1 text-sm">{product.product?.name || 'Unknown Product'}</h3>
                   <p className="text-2xl font-bold text-red-400 mb-1">{product.totals.orders}</p>
@@ -508,7 +508,9 @@ const Payments: React.FC = () => {
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-sm font-medium text-white">
-                          {transaction.description || 'Unknown Product'}
+                          {transaction.description || 
+                           filteredProducts.find(p => p.product_id === transaction.product_id)?.product?.name || 
+                           'Unknown Product'}
                         </p>
                         <p className="text-xs text-gray-400">
                           Qty: {transaction.quantity} × {stripeService.formatCurrency(transaction.amount_total / transaction.quantity, transaction.currency)}
