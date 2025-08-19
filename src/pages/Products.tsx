@@ -112,7 +112,7 @@ const Products: React.FC = () => {
           },
           {
             title: 'Total Revenue',
-            value: loading ? '...' : stripeService.formatCompactCurrency(stats.totalRevenue),
+            value: loading ? '...' : stripeService.formatCurrency(stats.totalRevenue),
             subtitle: `${stats.totalOrders} orders`,
             icon: DollarSign,
             color: 'bg-green-500/20',
