@@ -408,9 +408,9 @@ const Payments: React.FC = () => {
               {topProducts.map((product, index) => (
                 <div key={product.product_id} className="text-center p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all">
                   <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3 border border-red-500/40">
-                    {product.product?.name ? product.product.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'PR'}
+                    {product.product?.name ? product.product.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : product.product_id.slice(-2).toUpperCase()}
                   </div>
-                  <h3 className="font-semibold text-white mb-1 text-sm">{product.product?.name || product.product_id}</h3>
+                  <h3 className="font-semibold text-white mb-1 text-sm">{product.product?.name || `Product ${product.product_id.slice(-4)}`}</h3>
                   <p className="text-2xl font-bold text-red-400 mb-1">{product.totals.orders}</p>
                   <p className="text-sm text-gray-400">sales</p>
                   <p className="text-lg font-semibold text-green-400 mt-2">{stripeService.formatCurrency(product.totals.revenue)}</p>
@@ -489,15 +489,17 @@ const Payments: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {filteredTransactions.map((transaction) => (
+                  // Find the product data for this transaction
+                  const productData = filteredProducts.find(p => p.product_id === transaction.product_id);
+                  const productName = productData?.product?.name || transaction.description || `Product ${transaction.product_id.slice(-4)}`;
+                  
                   <tr key={transaction.session_id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full flex items-center justify-center border border-blue-500/40">
                           <User className="w-5 h-5 text-blue-400" />
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-white">
-                            {transaction.customer_email || 'Anonymous'}
+                            {productName}
                           </p>
                           <p className="text-xs text-gray-400">
                             ID: {transaction.session_id.slice(-8)}
@@ -552,7 +554,8 @@ const Payments: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}
