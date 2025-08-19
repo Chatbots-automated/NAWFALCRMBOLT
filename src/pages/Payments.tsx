@@ -494,58 +494,72 @@ const Payments: React.FC = () => {
                   const productName = productData?.product?.name || transaction.description || `Product ${transaction.product_id.slice(-4)}`;
                   
                   return (
-                  <tr key={transaction.session_id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full flex items-center justify-center border border-blue-500/40">
-                          <User className="w-5 h-5 text-blue-400" />
-                          <p className="text-xs text-gray-400">ID: {transaction.session_id.slice(-8)}</p>
+                    <tr key={transaction.session_id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full flex items-center justify-center border border-blue-500/40">
+                            <User className="w-5 h-5 text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">
+                              {transaction.customer_email || 'Anonymous'}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {productName}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              ID: {transaction.session_id.slice(-8)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="text-sm font-medium text-white">{productName}</p>
-                        <p className="text-xs text-gray-400">
-                          Qty: {transaction.quantity} × {stripeService.formatCurrency(transaction.amount_total / transaction.quantity, transaction.currency)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            {transaction.description || 
+                             filteredProducts.find(p => p.product_id === transaction.product_id)?.product?.name || 
+                             'Unknown Product'}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Qty: {transaction.quantity} × {stripeService.formatCurrency(transaction.amount_total / transaction.quantity, transaction.currency)}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-lg font-bold text-green-400">
+                          {stripeService.formatCurrency(transaction.amount_total, transaction.currency)}
                         </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-lg font-bold text-green-400">
-                        {stripeService.formatCurrency(transaction.amount_total, transaction.currency)}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-white">
-                        {stripeService.formatDate(transaction.created_unix)}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border bg-green-500/20 text-green-400 border-green-500/40">
-                        <CheckCircle size={12} />
-                        PAID
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button className="p-2 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors">
-                          <Eye size={16} />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-green-400 rounded-lg hover:bg-green-500/10 transition-colors">
-                          <Download size={16} />
-                        </button>
-                        <a
-                          href={`https://dashboard.stripe.com/payments/${transaction.payment_intent_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-gray-400 hover:text-purple-400 rounded-lg hover:bg-purple-500/10 transition-colors"
-                        >
-                          <ExternalLink size={16} />
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-white">
+                          {stripeService.formatDate(transaction.created_unix)}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border bg-green-500/20 text-green-400 border-green-500/40">
+                          <CheckCircle size={12} />
+                          PAID
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button className="p-2 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors">
+                            <Eye size={16} />
+                          </button>
+                          <button className="p-2 text-gray-400 hover:text-green-400 rounded-lg hover:bg-green-500/10 transition-colors">
+                            <Download size={16} />
+                          </button>
+                          <a
+                            href={`https://dashboard.stripe.com/payments/${transaction.payment_intent_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-gray-400 hover:text-purple-400 rounded-lg hover:bg-purple-500/10 transition-colors"
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
