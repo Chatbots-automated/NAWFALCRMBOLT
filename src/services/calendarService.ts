@@ -37,6 +37,7 @@ class CalendarService {
     calendarId?: string;
     tz?: string;
     top?: number;
+    attendee_email?: string;
   } = {}): Promise<CalendarEvent[]> {
     try {
       const params = new URLSearchParams();
@@ -46,6 +47,7 @@ class CalendarService {
       if (options.calendarId) params.set('calendarId', options.calendarId);
       if (options.tz) params.set('tz', options.tz);
       if (options.top) params.set('top', options.top.toString());
+      if (options.attendee_email) params.set('attendee_email', options.attendee_email);
 
       const url = `${this.baseUrl}?${params.toString()}`;
       
@@ -60,7 +62,8 @@ class CalendarService {
           end: options.end,
           calendarId: options.calendarId,
           tz: options.tz,
-          top: options.top
+          top: options.top,
+          attendee_email: options.attendee_email
         })
       });
       
@@ -73,6 +76,27 @@ class CalendarService {
     } catch (error) {
       console.error('Failed to fetch calendar events:', error);
       throw error;
+    }
+  }
+
+  // Get events for a specific client
+  async getClientEvents(attendeeEmail: string, days: number = 365): Promise<CalendarEvent[]> {
+    try {
+      const start = new Date();
+      start.setDate(start.getDate() - 30); // Look back 30 days
+      const end = new Date();
+      end.setDate(end.getDate() + days); // Look forward specified days
+
+      return this.getEvents({
+        start: start.toISOString(),
+        end: end.toISOString(),
+        attendee_email: attendeeEmail,
+        tz: 'America/New_York',
+        top: 100
+      });
+    } catch (error) {
+      console.error('Failed to fetch client events:', error);
+      return [];
     }
   }
 

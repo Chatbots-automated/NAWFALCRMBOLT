@@ -71,6 +71,7 @@ export interface CatalogFilters {
   created_gte?: number;
   created_lte?: number;
   product_ids?: string[];
+  customer_email?: string;
   include_products?: boolean | number;
   include_prices?: boolean | number;
   maxPages?: number;
@@ -87,6 +88,7 @@ class StripeService {
       if (filters.active !== undefined) params.set('active', String(filters.active));
       if (filters.created_gte) params.set('created_gte', String(filters.created_gte));
       if (filters.created_lte) params.set('created_lte', String(filters.created_lte));
+      if (filters.customer_email) params.set('customer_email', filters.customer_email);
       if (filters.include_products !== undefined) params.set('include_products', filters.include_products ? '1' : '0');
       if (filters.include_prices !== undefined) params.set('include_prices', filters.include_prices ? '1' : '0');
       if (filters.maxPages) params.set('maxPages', String(filters.maxPages));
@@ -112,6 +114,7 @@ class StripeService {
           created_gte: filters.created_gte,
           created_lte: filters.created_lte,
           product_ids: filters.product_ids,
+          customer_email: filters.customer_email,
           include_products: filters.include_products ? 1 : 0,
           include_prices: filters.include_prices ? 1 : 0,
           maxPages: filters.maxPages
@@ -127,6 +130,26 @@ class StripeService {
     } catch (error) {
       console.error('Failed to fetch Stripe catalog data:', error);
       throw error;
+    }
+  }
+
+  // Get transactions for a specific client
+  async getClientTransactions(customerEmail: string): Promise<StripeTransaction[]> {
+    try {
+      const catalogData = await this.getCatalogData({
+        customer_email: customerEmail,
+        include_products: 1,
+        include_prices: 1
+      });
+      
+      // Flatten all transactions from all products
+      const allTransactions = catalogData.products.flatMap(product => product.transactions);
+      
+      // Sort by date (newest first)
+      return allTransactions.sort((a, b) => b.created_unix - a.created_unix);
+    } catch (error) {
+      console.error('Failed to fetch client transactions:', error);
+      return [];
     }
   }
 

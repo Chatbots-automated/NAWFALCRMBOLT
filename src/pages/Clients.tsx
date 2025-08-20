@@ -17,13 +17,41 @@ import {
   Eye,
   Edit,
   Trash2,
-  Send
+  Send,
+  BarChart3,
+  MessageSquare,
+  DollarSign,
+  Zap,
+  MapPin,
+  User
 } from 'lucide-react'
 import { clientService } from '../services/clientService'
 import { Client } from '../lib/supabase'
+import { stripeService, StripeTransaction } from '../services/stripeService'
+import { calendarService, CalendarEvent } from '../services/calendarService'
 import CreateClientModal from '../components/CreateClientModal'
 import EditClientModal from '../components/EditClientModal'
 import CallTextActions from '../components/CallTextActions'
+
+// Enhanced client interface with 360-degree data
+interface ClientDossier extends Client {
+  transactions_history: StripeTransaction[]
+  calendar_events: CalendarEvent[]
+  all_activities: ActivityItem[]
+}
+
+interface ActivityItem {
+  id: string
+  type: 'note' | 'transaction' | 'event' | 'activity'
+  timestamp: number
+  title: string
+  description: string
+  author?: string
+  amount?: number
+  currency?: string
+  location?: string
+  metadata?: any
+}
 
 const Clients: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([])
@@ -31,7 +59,8 @@ const Clients: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [selectedClient, setSelectedClient] = useState<ClientDossier | null>(null)
+  const [loadingDossier, setLoadingDossier] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
@@ -76,6 +105,101 @@ const Clients: React.FC = () => {
       setStats(clientStats)
     } catch (err) {
       console.error('Failed to fetch stats:', err)
+    }
+  }
+
+  // Fetch comprehensive client dossier with all related data
+  const fetchClientDossierDetails = async (client: Client) => {
+    try {
+      setLoadingDossier(true)
+      
+      // Fetch client's transaction history from Stripe
+      let transactions: StripeTransaction[] = []
+      if (client.email) {
+        transactions = await stripeService.getClientTransactions(client.email)
+      }
+      
+      // Fetch client's calendar events
+      let events: CalendarEvent[] = []
+      if (client.email) {
+        events = await calendarService.getClientEvents(client.email)
+      }
+      
+      // Combine all activities into a unified timeline
+      const allActivities: ActivityItem[] = []
+      
+      // Add notes as activities
+      client.notes.forEach(note => {
+        allActivities.push({
+          id: note.id,
+          type: note.type === 'manual' ? 'note' : 'activity',
+          timestamp: new Date(note.created_at).getTime(),
+          title: note.type === 'manual' ? 'Note Added' : 'System Activity',
+          description: note.body,
+          author: note.author,
+          metadata: note.changes
+        })
+      })
+      
+      // Add transactions as activities
+      transactions.forEach(transaction => {
+        allActivities.push({
+          id: transaction.session_id,
+          type: 'transaction',
+          timestamp: transaction.created_unix * 1000,
+          title: 'Payment Received',
+          description: transaction.description || `Payment for ${transaction.product_id}`,
+          amount: transaction.amount_total,
+          currency: transaction.currency,
+          metadata: transaction
+        })
+      })
+      
+      // Add calendar events as activities
+      events.forEach(event => {
+        allActivities.push({
+          id: event.id,
+          type: 'event',
+          timestamp: new Date(event.start.dateTime).getTime(),
+          title: event.subject,
+          description: event.bodyPreview || 'Calendar event',
+          location: event.location?.displayName,
+          metadata: event
+        })
+      })
+      
+      // Sort all activities by timestamp (newest first)
+      allActivities.sort((a, b) => b.timestamp - a.timestamp)
+      
+      // Create the enhanced client dossier
+      const clientDossier: ClientDossier = {
+        ...client,
+        transactions_history: transactions,
+        calendar_events: events,
+        all_activities: allActivities
+      }
+      
+      setSelectedClient(clientDossier)
+    } catch (error) {
+      console.error('Failed to fetch client dossier:', error)
+      // Fallback to basic client data
+      const basicDossier: ClientDossier = {
+        ...client,
+        transactions_history: [],
+        calendar_events: [],
+        all_activities: client.notes.map(note => ({
+          id: note.id,
+          type: note.type === 'manual' ? 'note' : 'activity',
+          timestamp: new Date(note.created_at).getTime(),
+          title: note.type === 'manual' ? 'Note Added' : 'System Activity',
+          description: note.body,
+          author: note.author,
+          metadata: note.changes
+        })).sort((a, b) => b.timestamp - a.timestamp)
+      }
+      setSelectedClient(basicDossier)
+    } finally {
+      setLoadingDossier(false)
     }
   }
 
@@ -392,7 +516,7 @@ const Clients: React.FC = () => {
                   return (
                     <tr 
                       key={client.id} 
-                      onClick={() => setSelectedClient(client)}
+                      onClick={() => fetchClientDossierDetails(client)}
                       className="hover:bg-white/5 transition-colors cursor-pointer group"
                     >
                       <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
@@ -476,7 +600,7 @@ const Clients: React.FC = () => {
                           <button 
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedClient(client)
+                              fetchClientDossierDetails(client)
                             }}
                             className="p-2 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors"
                           >
@@ -515,8 +639,21 @@ const Clients: React.FC = () => {
       {selectedClient && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-black/90 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            {loadingDossier && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                <div className="text-center">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-purple-500 rounded-full animate-spin animate-reverse"></div>
+                  </div>
+                  <p className="text-white font-semibold text-lg mt-4">LOADING ELITE DOSSIER...</p>
+                  <p className="text-gray-400 text-sm mt-1">Compiling comprehensive intelligence</p>
+                </div>
+              </div>
+            )}
+            
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">CLIENT DETAILS</h2>
+              <h2 className="text-2xl font-bold text-white">ELITE CLIENT DOSSIER</h2>
               <button
                 onClick={() => setSelectedClient(null)}
                 className="p-2 rounded-xl hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
@@ -630,26 +767,126 @@ const Clients: React.FC = () => {
                 </div>
               )}
 
-              {/* Notes Section */}
+              {/* Elite Activity Timeline */}
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <h4 className="text-gray-300 font-medium mb-3">Notes</h4>
-                <div className="space-y-3 max-h-40 overflow-y-auto mb-4">
-                  {selectedClient.notes.filter(note => note.type === 'manual').length > 0 ? (
-                    selectedClient.notes
-                      .filter(note => note.type === 'manual')
-                      .map((note, index) => (
-                        <div key={index} className="border-l-2 border-red-500/40 pl-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="w-2 h-2 rounded-full bg-red-400"></span>
-                            <p className="text-white text-sm font-medium">{note.body}</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-gradient-to-br from-red-500/30 to-purple-500/30 rounded-xl border border-red-500/40">
+                    <BarChart3 className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold text-lg">ELITE ACTIVITY TIMELINE</h4>
+                    <p className="text-gray-400 text-sm">Complete interaction history and intelligence</p>
+                  </div>
+                  <div className="ml-auto flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-300">{selectedClient.transactions_history.length} Payments</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-gray-300">{selectedClient.calendar_events.length} Events</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-300">{selectedClient.notes.length} Notes</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {selectedClient.all_activities.length > 0 ? (
+                    selectedClient.all_activities.map((activity, index) => {
+                      const getActivityIcon = () => {
+                        switch (activity.type) {
+                          case 'transaction': return DollarSign
+                          case 'event': return Calendar
+                          case 'note': return MessageSquare
+                          case 'activity': return Zap
+                          default: return MessageSquare
+                        }
+                      }
+                      
+                      const getActivityColor = () => {
+                        switch (activity.type) {
+                          case 'transaction': return 'border-green-500/40 bg-green-500/10'
+                          case 'event': return 'border-blue-500/40 bg-blue-500/10'
+                          case 'note': return 'border-purple-500/40 bg-purple-500/10'
+                          case 'activity': return 'border-orange-500/40 bg-orange-500/10'
+                          default: return 'border-gray-500/40 bg-gray-500/10'
+                        }
+                      }
+                      
+                      const ActivityIcon = getActivityIcon()
+                      
+                      return (
+                        <div key={activity.id} className={`border-l-4 pl-4 pb-4 ${getActivityColor()}`}>
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-black/40 rounded-lg border border-white/20 mt-1">
+                              <ActivityIcon className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-white font-semibold text-sm">{activity.title}</h5>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(activity.timestamp).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-gray-300 text-sm mb-2">{activity.description}</p>
+                              
+                              {/* Activity-specific details */}
+                              {activity.type === 'transaction' && activity.amount && (
+                                <div className="flex items-center gap-4 text-xs">
+                                  <span className="text-green-400 font-bold">
+                                    {stripeService.formatCurrency(activity.amount, activity.currency)}
+                                  </span>
+                                  {activity.metadata?.customer_email && (
+                                    <span className="text-gray-400">{activity.metadata.customer_email}</span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {activity.type === 'event' && activity.location && (
+                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                  <MapPin size={12} />
+                                  <span>{activity.location}</span>
+                                </div>
+                              )}
+                              
+                              {activity.author && (
+                                <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                                  <User size={12} />
+                                  <span>{activity.author}</span>
+                                </div>
+                              )}
+                              
+                              {activity.metadata?.changes && (
+                                <div className="mt-2 space-y-1">
+                                  {activity.metadata.changes.map((change: any, changeIndex: number) => (
+                                    <div key={changeIndex} className="text-xs text-gray-300 bg-black/30 p-2 rounded">
+                                      <span className="font-medium">{change.field}:</span> 
+                                      <span className="text-gray-400"> {change.old_value}</span> 
+                                      <span className="text-gray-500"> → </span>
+                                      <span className="text-white">{change.new_value}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-xs text-gray-400 mt-1 ml-4">
-                            {note.author} • {formatDate(note.created_at)}
-                          </p>
                         </div>
-                      ))
+                      )
+                    })
                   ) : (
-                    <p className="text-gray-400 text-sm">No notes added yet</p>
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                      <p className="text-gray-400">No activity recorded yet</p>
+                    </div>
                   )}
                 </div>
                 
@@ -657,7 +894,7 @@ const Clients: React.FC = () => {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Add a note for this client..."
+                    placeholder="Add an elite intelligence note..."
                     value={noteInputs[selectedClient.id] || ''}
                     onChange={(e) => setNoteInputs(prev => ({ ...prev, [selectedClient.id]: e.target.value }))}
                     onKeyPress={(e) => {
@@ -665,7 +902,7 @@ const Clients: React.FC = () => {
                         handleAddNote(selectedClient.id, noteInputs[selectedClient.id].trim())
                       }
                     }}
-                    className="flex-1 px-4 py-3 border border-purple-500/30 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-black/30 text-white placeholder-gray-500"
+                    className="flex-1 px-4 py-3 border border-red-500/30 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-black/30 text-white placeholder-gray-500"
                   />
                   <button
                     onClick={() => {
@@ -674,46 +911,13 @@ const Clients: React.FC = () => {
                       }
                     }}
                     disabled={!noteInputs[selectedClient.id]?.trim()}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ADD NOTE
+                    ADD INTEL
                   </button>
                 </div>
               </div>
 
-              {/* Activity Section */}
-              {selectedClient.notes.filter(note => note.type === 'activity').length > 0 && (
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <h4 className="text-gray-300 font-medium mb-3">Activity</h4>
-                  <div className="space-y-3 max-h-40 overflow-y-auto">
-                    {selectedClient.notes
-                      .filter(note => note.type === 'activity')
-                      .map((note, index) => (
-                        <div key={index} className="border-l-2 border-blue-500/40 pl-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                            <p className="text-white text-sm font-medium">{note.body}</p>
-                          </div>
-                          {note.changes && note.changes.length > 0 && (
-                            <div className="ml-4 space-y-1">
-                              {note.changes.map((change, changeIndex) => (
-                                <div key={changeIndex} className="text-xs text-gray-300">
-                                  <span className="font-medium">{change.field}:</span> 
-                                  <span className="text-gray-400"> {change.old_value}</span> 
-                                  <span className="text-gray-500"> → </span>
-                                  <span className="text-white">{change.new_value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1 ml-4">
-                            {note.author} • {formatDate(note.created_at)}
-                          </p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
               <div className="flex gap-3 pt-4 border-t border-white/10">
                 <div onClick={(e) => e.stopPropagation()}>
                   <CallTextActions
