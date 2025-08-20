@@ -143,12 +143,15 @@ class CalendarService {
     const end = new Date();
     end.setDate(end.getDate() + days);
 
-    return this.getEvents({
+    const events = await this.getEvents({
       start: start.toISOString(),
       end: end.toISOString(),
       tz: timeZone,
       top: 50
     });
+    
+    // Sort events by date and time (earliest first for upcoming events)
+    return events.sort((a, b) => new Date(a.start.dateTime).getTime() - new Date(b.start.dateTime).getTime());
   }
 
   formatEventTime(event: CalendarEvent): string {

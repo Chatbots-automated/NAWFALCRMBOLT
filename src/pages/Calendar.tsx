@@ -94,7 +94,7 @@ const Calendar: React.FC = () => {
      const eventEnd = new Date(event.end.dateTime);
      const eventEndHour = eventEnd.getHours();
      return eventHour === hour || (eventHour < hour && eventEndHour > hour);
-    });
+    }).sort((a, b) => new Date(a.start.dateTime).getTime() - new Date(b.start.dateTime).getTime());
   };
 
   // Format event date for display
@@ -272,7 +272,7 @@ const Calendar: React.FC = () => {
                             const eventStart = new Date(event.start.dateTime);
                             const eventHour = eventStart.getHours();
                             return eventHour < 9 || eventHour > 17;
-                          }).map((event) => {
+                          }).sort((a, b) => new Date(a.start.dateTime).getTime() - new Date(b.start.dateTime).getTime()).map((event) => {
                             const endTime = calendarService.formatEventTime(event).split(' - ')[1] || '';
                             
                             return (

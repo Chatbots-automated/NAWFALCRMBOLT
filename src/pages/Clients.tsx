@@ -174,7 +174,7 @@ const Clients: React.FC = () => {
         })
       })
       
-      // Sort all activities by timestamp (newest first)
+      // Sort all activities by timestamp (newest first - by full date and time)
       allActivities.sort((a, b) => b.timestamp - a.timestamp)
       
       // Create the enhanced client dossier
