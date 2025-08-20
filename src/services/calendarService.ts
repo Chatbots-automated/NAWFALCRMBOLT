@@ -82,18 +82,43 @@ class CalendarService {
   // Get events for a specific client
   async getClientEvents(attendeeEmail: string, days: number = 365): Promise<CalendarEvent[]> {
     try {
-      const start = new Date();
-      start.setDate(start.getDate() - 30); // Look back 30 days
-      const end = new Date();
-      end.setDate(end.getDate() + days); // Look forward specified days
+      // Only fetch events if we have an email to filter by
+      if (!attendeeEmail || !attendeeEmail.includes('@')) {
+        console.log('No valid email provided for calendar filtering, returning empty array');
+        return [];
+      }
 
-      return this.getEvents({
-        start: start.toISOString(),
-        end: end.toISOString(),
-        attendee_email: attendeeEmail,
-        tz: 'America/New_York',
-        top: 100
-      });
+      try {
+        const start = new Date();
+        start.setDate(start.getDate() - 30); // Look back 30 days
+        const end = new Date();
+        end.setDate(end.getDate() + days); // Look forward specified days
+
+        const events = await this.getEvents({
+          start: start.toISOString(),
+          end: end.toISOString(),
+          attendee_email: attendeeEmail,
+          tz: 'America/New_York',
+          top: 100
+        });
+
+        // Additional client-side filtering to ensure we only get events for this specific client
+        const filteredEvents = events.filter(event => {
+          // Check if the client email is in the attendees or if it's the organizer
+          const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
+          const clientEmail = attendeeEmail.toLowerCase();
+          
+          // For now, only return events where the client is the organizer
+          // This prevents showing all calendar events to every client
+          return organizerEmail === clientEmail;
+        });
+
+        console.log(`Found ${filteredEvents.length} events specifically for ${attendeeEmail}`);
+        return filteredEvents;
+      } catch (apiError) {
+        console.log('Calendar API filtering not supported, returning empty array to avoid showing all events');
+        return [];
+      }
     } catch (error) {
       console.error('Failed to fetch client events:', error);
       return [];

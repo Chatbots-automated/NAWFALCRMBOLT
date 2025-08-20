@@ -230,10 +230,10 @@ const Communications: React.FC = () => {
       if (!client) return;
       
       const actionMessages = {
-        call: `Phone call initiated to ${meta.phone}`,
-        text: `SMS sent to ${meta.phone}: "${meta.body}"`,
-        facetime: `FaceTime call initiated to ${meta.phone}`,
-        email: `Email sent to ${meta.email}`
+        call: `Phone call initiated`,
+        text: `SMS sent`,
+        facetime: `FaceTime call initiated`,
+        email: `Email sent`
       };
       
       await clientService.addNote(clientId, actionMessages[type], 'System');

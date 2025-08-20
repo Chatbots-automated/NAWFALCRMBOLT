@@ -122,7 +122,13 @@ const Clients: React.FC = () => {
       // Fetch client's calendar events
       let events: CalendarEvent[] = []
       if (client.email) {
-        events = await calendarService.getClientEvents(client.email)
+        try {
+          events = await calendarService.getClientEvents(client.email)
+          console.log(`Fetched ${events.length} calendar events for ${client.email}`)
+        } catch (error) {
+          console.log('Calendar events not available for this client')
+          events = []
+        }
       }
       
       // Combine all activities into a unified timeline
@@ -249,10 +255,10 @@ const Clients: React.FC = () => {
       if (!client) return
       
       const actionMessages = {
-        call: `Phone call initiated to ${meta.phone}`,
-        text: `SMS sent to ${meta.phone}`,
-        facetime: `FaceTime call initiated to ${meta.phone}`,
-        email: `Email sent to ${meta.email}`
+        call: `Phone call initiated`,
+        text: `SMS sent`,
+        facetime: `FaceTime call initiated`,
+        email: `Email sent`
       }
       
       await clientService.addNote(clientId, actionMessages[type], 'System')
